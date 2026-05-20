@@ -1,6 +1,7 @@
 ---
 name: shortvideo-planner
 description: Converts a user's natural-language video brief into a validated input.json with acceptance_criteria. Use when the user requests a new short vertical video, asks to design a scenario, or starts a new project under projects/. Always run BEFORE shortvideo-generator. Outputs projects/<name>/input.json.
+disable-model-invocation: true
 allowed-tools: Read, Write, Edit
 argument-hint: [project-name]
 ---

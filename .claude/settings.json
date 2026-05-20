@@ -1,0 +1,31 @@
+{
+  "_comment": "Trust boundary for shortvideo-skill. See docs/harness-diag-2026-05-21.md for rationale. Anthropic harness-design principle: 'evaluators must be protected from the evaluated' (review-harness/diagnosis-rubric.md C1/C3).",
+  "permissions": {
+    "deny": [
+      "Edit(.claude/agents/**)",
+      "Edit(.claude/skills/**/SKILL.md)",
+      "Edit(.claude/skills/**/references/**)",
+      "Edit(.claude/commands/**)",
+      "Edit(.claude/settings.json)",
+      "Edit(.claude/settings.local.json)",
+      "Edit(scripts/lint_recipe.py)",
+      "Edit(scripts/ffprobe_quality.py)",
+      "Edit(scripts/render_video.py)",
+      "Edit(scripts/make_captions.py)",
+      "Edit(scripts/segment_hash.py)",
+      "Edit(examples/**/review_report.md)",
+      "Edit(examples/**/input.json)",
+      "Edit(.github/workflows/**)",
+      "Edit(.github/workflows/baseline-sha256.txt)",
+      "Write(.claude/settings.json)",
+      "Bash(rm -rf *)",
+      "Bash(rm -rf /)",
+      "Bash(rm -rf ~)",
+      "Bash(git push --force *)",
+      "Bash(git push --force-with-lease *)",
+      "Bash(git reset --hard *)",
+      "Bash(git clean -fd *)",
+      "Bash(git checkout .)"
+    ]
+  }
+}

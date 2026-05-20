@@ -67,3 +67,11 @@ jobs:
           for f in examples/*/output.mp4; do
             python3 .github/workflows/scripts/check_output_mp4.py "$f"
           done
+
+      - name: Monitor sha256 of trust-boundary files (lint / rubric / few-shot)
+        run: |
+          python3 .github/workflows/scripts/check_sha256.py .github/baseline-sha256.txt
+
+      - name: Determinism flag check (PIX_FMT / CRF / PRESET / overlap thresholds)
+        run: |
+          python3 .github/workflows/scripts/check_determinism_flags.py
