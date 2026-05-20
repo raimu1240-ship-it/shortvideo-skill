@@ -1,0 +1,9 @@
+[
+  {"patch_type":"replace_bg","segment":"s2","new_query":"tokyo park bench morning"},
+  {"patch_type":"set_field","path":"voice_duration_source","value":"segment"},
+  {"patch_type":"replace_illust","segment":"s2","new_query":"スーツ 男性 微笑む"},
+  {"patch_type":"adjust_sub_delay","segment":"s1","new_delay":2.5},
+  {"patch_type":"adjust_sub_delay","segment":"s2","new_delay":2.5},
+  {"patch_type":"set_field","path":"audio_post.loudnorm_target_I","value":-23},
+  {"patch_type":"set_field","path":"layout.caption_y_offset_px","value":60}
+]

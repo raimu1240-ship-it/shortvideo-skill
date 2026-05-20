@@ -1,0 +1,63 @@
+{
+  "project_name": "sample-test",
+  "duration_target_sec": 10,
+  "resolution": "720x1280",
+  "fps": 30,
+  "seed": 17,
+  "voice_provider": "auto",
+  "voice_duration_source": "ffprobe",
+  "persona": {
+    "age": 28,
+    "gender": "male",
+    "context": "新しい働き方への気付き"
+  },
+  "scenario": {
+    "segments": [
+      {
+        "id": "s1",
+        "duration_sec": 5.0,
+        "bg_query": "japan train station morning",
+        "illust_query": "考える 男性 サラリーマン",
+        "voice_text": "毎日同じ通勤、これでいいのかなって。",
+        "caption_main": ["毎日同じ通勤、", "これでいいのかな。"],
+        "bubble_text": "ふと立ち止まった",
+        "sub_delay": 2.5,
+        "contact_sheet_passed": true
+      },
+      {
+        "id": "s2",
+        "duration_sec": 5.0,
+        "bg_query": "japan park bench autumn",
+        "illust_query": "穏やか 男性 笑顔",
+        "voice_text": "自分のペースで、無理しない働き方を選んだ。",
+        "caption_main": ["自分のペースが、", "いちばん続く。"],
+        "bubble_text": "気付いた朝のこと",
+        "sub_delay": 2.5,
+        "contact_sheet_passed": true
+      }
+    ]
+  },
+  "acceptance_criteria": {
+    "duration_target_sec": 10,
+    "duration_tolerance_sec": 0.5,
+    "resolution": "720x1280",
+    "fps": 30,
+    "av_drift_max_sec": 0.1,
+    "loudnorm_lufs_range": [-25, -21],
+    "must_have": [
+      "caption_main_per_segment",
+      "irasutoya_per_segment",
+      "japanese_bg_only"
+    ],
+    "must_not_have": [
+      "pr_badge",
+      "header_brand_bar",
+      "footer_brand_bar",
+      "logo_persistent_overlay",
+      "product_card",
+      "bgm",
+      "direct_sales_caption"
+    ]
+  },
+  "notes": "Phase 2.A E2E 検証用。planner→generator→reviewer の 1 周動作確認サンプル"
+}

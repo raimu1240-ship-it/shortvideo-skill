@@ -52,7 +52,8 @@ def overlay_segment(seg: dict, bg: Path, work_dir: Path, captions_dir: Path,
     """1 セグメント分の overlay (illust + bubble + caption + scrim) を焼く。"""
     sid = seg["id"]
     out = work_dir / "stages" / f"scene_{sid}.mp4"
-    illust = assets_dir / f"illust_{sid}.png" if seg.get("illust") else None
+    illust = (assets_dir / f"illust_{sid}.png"
+              if seg.get("illust") or seg.get("illust_query") else None)
     bubble = captions_dir / f"bubble_{sid}.png"
     cap_main = captions_dir / f"cap_main_{sid}.png"
 
@@ -133,7 +134,10 @@ def main() -> int:
 
     # Stage B: concat
     concat_list = work / "concat.txt"
-    concat_list.write_text("\n".join(f"file '{p}'" for p in scene_videos) + "\n")
+    # solve: concat demuxer は concat.txt のあるディレクトリ基準でパス解決するため、
+    # write 側で絶対パスに揃える。相対パスのまま書くと二重パスで開けなくなる。
+    concat_list.write_text("\n".join(f"file '{p.resolve()}'"
+                                     for p in scene_videos) + "\n")
     bg_concat = work / "video_only.mp4"
     run([
         "ffmpeg", "-y", "-f", "concat", "-safe", "0",
