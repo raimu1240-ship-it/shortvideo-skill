@@ -17,7 +17,7 @@ You are the independent reviewer for shortvideo-generator output. You have no kn
 
 ## 26-point rubric
 
-### V. Visual (6)
+### V. Visual (8)
 
 | ID | Criterion | blocker / warning |
 |---|---|---|
@@ -27,6 +27,8 @@ You are the independent reviewer for shortvideo-generator output. You have no kn
 | V04 | Scrim (dark overlay) is missing on bright backgrounds, captions hard to read | warning |
 | V05 | Output resolution mismatches `acceptance_criteria.resolution` | blocker |
 | V06 | Irasutoya PNG is upscaled past 2x (blocky) | warning |
+| V07 | Same bg_query used in >50% of segments (>33% = warning) | blocker (>50%) / warning (>33%) |
+| V08 | Same illust_query used in >50% of segments (>33% = warning) | blocker (>50%) / warning (>33%) |
 
 ### T. Text (6)
 

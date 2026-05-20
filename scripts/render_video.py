@@ -26,30 +26,77 @@ PRESET = "medium"
 ILLUST_H_RATIO = 0.22
 ILLUST_TOP_Y_RATIO = 0.32
 
+# justification: v5 build script の "Two-line captions get multiple background
+# changes while the caption stays on-screen" を移植。同じ src を 2-3 ヶ所から
+# 切り出して concat することで「同じ素材でも視覚的変化」を出す。本番運用で
+# bg が静止しすぎていると視聴維持率が落ちる。2.5 秒目安で chunk 分割。
+FASTCUT_CHUNK_SEC = 2.5
+
 
 def run(cmd: list[str]) -> None:
     print(f"$ {' '.join(str(c) for c in cmd)}", file=sys.stderr)
     subprocess.run(cmd, check=True)
 
 
+def _src_duration(path: Path) -> float:
+    """ffprobe で src の duration を返す。"""
+    r = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+         "-of", "default=nw=1:nk=1", str(path)],
+        capture_output=True, text=True, check=True,
+    )
+    return float(r.stdout.strip())
+
+
 def prepare_segment(seg: dict, work_dir: Path, w: int, h: int, fps: int) -> Path:
-    """1 セグメント分の背景動画を target 解像度に整形して返す。"""
+    """1 セグメント分の背景動画を fastcut (2-3 秒ごとに切替) で生成する。
+    同じ src の異なる time offset から chunk を切り出して concat することで
+    視覚的変化を出す。src が短ければ可能な範囲で offset を分散。"""
     sid = seg["id"]
     src = work_dir / "assets" / f"bg_{sid}.mp4"
     out = work_dir / "stages" / f"scene_{sid}_bg.mp4"
     out.parent.mkdir(parents=True, exist_ok=True)
-    dur = seg["duration_sec"]
-    # 縦長 (高さ >= 幅) ならそのまま scale、横長は scale+crop で中央寄せ
+    dur = float(seg["duration_sec"])
     vf = (f"scale={w}:{h}:force_original_aspect_ratio=increase,"
           f"crop={w}:{h},"
           f"eq=brightness=-0.05:saturation=0.92")
+
+    # chunk 数: 2.5 秒目安で割る、最低 2 chunks
+    n_chunks = max(2, round(dur / FASTCUT_CHUNK_SEC))
+    chunk_dur = dur / n_chunks
+
+    # src 内の offset を均等分散。src が短ければ available=0 で全 chunk 同一 offset。
+    try:
+        src_dur = _src_duration(src)
+    except Exception:
+        src_dur = dur  # 取れなければ chunk_dur ぴったり前提
+    available = max(0.0, src_dur - chunk_dur)
+    if available <= 0.01 or n_chunks == 1:
+        offsets = [0.0] * n_chunks
+    else:
+        offsets = [i * (available / (n_chunks - 1)) for i in range(n_chunks)]
+
+    chunk_files = []
+    for i, offset in enumerate(offsets):
+        chunk_out = work_dir / "stages" / f"scene_{sid}_chunk{i}.mp4"
+        run([
+            "ffmpeg", "-y", "-ss", f"{offset:.3f}", "-i", str(src),
+            "-t", f"{chunk_dur:.3f}",
+            "-vf", vf,
+            "-c:v", "libx264", "-preset", PRESET, "-crf", str(CRF),
+            "-pix_fmt", PIX_FMT, "-r", str(fps), "-an",
+            str(chunk_out),
+        ])
+        chunk_files.append(chunk_out)
+
+    # chunks を concat (絶対パス指定で demuxer 二重解決バグ回避)
+    concat_list = work_dir / "stages" / f"scene_{sid}_concat.txt"
+    concat_list.write_text(
+        "\n".join(f"file '{p.resolve()}'" for p in chunk_files) + "\n"
+    )
     run([
-        "ffmpeg", "-y", "-i", str(src),
-        "-t", str(dur),
-        "-vf", vf,
-        "-c:v", "libx264", "-preset", PRESET, "-crf", str(CRF),
-        "-pix_fmt", PIX_FMT, "-r", str(fps), "-an",
-        str(out),
+        "ffmpeg", "-y", "-f", "concat", "-safe", "0",
+        "-i", str(concat_list), "-c", "copy", str(out),
     ])
     return out
 

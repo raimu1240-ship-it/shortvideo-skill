@@ -8,6 +8,7 @@ Exit: 0 = clean / 1 = error / 2 = warning only
 import argparse
 import json
 import sys
+from collections import Counter
 from pathlib import Path
 
 # justification: brand-name案件で観測した字数閾値。
@@ -126,6 +127,26 @@ def check(data: dict) -> tuple[list[str], list[str]]:
         c = "".join(cs) if isinstance(cs, list) else (cs or "")
         if label and c and label in c:
             warns.append(f"[9] overlay label {label!r} duplicated in caption in {seg['id']}")
+
+    # V07/V08. bg_query / illust_query 使い回しチェック
+    # justification: 本番納品では同じ素材を複数 segment で使うと「手抜き感」
+    # が出る。4 segments 以上で評価、同一素材が半数超なら error、3 分の 1 超なら warn。
+    segs = data.get("scenario", {}).get("segments", [])
+    if len(segs) >= 4:
+        for field, vid in [("bg_query", "V07"), ("illust_query", "V08")]:
+            counter = Counter(s.get(field, "") for s in segs if s.get(field))
+            if not counter:
+                continue
+            top_val, top_count = counter.most_common(1)[0]
+            ratio = top_count / len(segs)
+            if ratio >= 0.50:
+                errors.append(f"[{vid}] {field} {top_val!r} used in "
+                              f"{top_count}/{len(segs)} segments ({ratio:.0%}) "
+                              f"— same asset reused too much")
+            elif ratio > 0.34:
+                warns.append(f"[{vid}w] {field} {top_val!r} in "
+                             f"{top_count}/{len(segs)} segments ({ratio:.0%}) "
+                             f"— consider diversifying")
 
     # T06. voice-caption sync: voice_text と caption_main が意味的に揃っているか
     for seg in data.get("scenario", {}).get("segments", []):
