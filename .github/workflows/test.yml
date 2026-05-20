@@ -23,60 +23,26 @@ jobs:
       - name: Install Python deps
         run: pip install Pillow
 
-      - name: Lint every example input.json (must execute, may report blockers)
+      - name: Lint every example input.json
         run: |
-          # examples/ は意図的に blocker を含む calibration material も含むため
-          # lint exit code (1=error / 2=warn / 0=clean) は CI fail にしない。
-          # ここでは「lint が parse error なく走り、JSON 出力できる」だけを assert。
           set -e
           for f in examples/*/input.json; do
-            echo "=== lint $f ==="
             python3 scripts/lint_recipe.py "$f" --json > /tmp/lint.json || true
-            python3 -c "
-import json
-d = json.load(open('/tmp/lint.json'))
-assert 'errors' in d and 'warnings' in d, 'lint json shape broken'
-print(f'  parsed: errors={len(d[\"errors\"])} warns={len(d[\"warnings\"])}')
-"
+            python3 .github/workflows/scripts/check_lint.py /tmp/lint.json "$f"
           done
 
       - name: Import-smoke test every script
         run: |
           set -e
-          cd scripts
-          for f in *.py; do
-            echo "import-smoke $f"
-            python3 -c "
-import importlib.util, sys
-spec = importlib.util.spec_from_file_location('m', '$f')
-mod = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(mod)
-print('ok')
-"
+          for f in scripts/*.py; do
+            python3 .github/workflows/scripts/check_import.py "$f"
           done
 
       - name: Validate SKILL.md / agent / command frontmatter
         run: |
           set -e
           for f in .claude/skills/*/SKILL.md .claude/agents/*.md .claude/commands/*.md; do
-            python3 - <<PY
-import sys, re
-text = open("$f").read()
-if not text.startswith("---"):
-    print(f"::error file=$f::missing frontmatter")
-    sys.exit(1)
-parts = text.split("---", 2)
-if len(parts) < 3:
-    print(f"::error file=$f::malformed frontmatter")
-    sys.exit(1)
-fm_body = parts[1]
-# minimal required fields
-for key in ("name", "description"):
-    if not re.search(rf"^{key}\s*:", fm_body, re.MULTILINE):
-        print(f"::error file=$f::frontmatter missing '{key}'")
-        sys.exit(1)
-print(f"$f: ok")
-PY
+            python3 .github/workflows/scripts/check_frontmatter.py "$f"
           done
 
       - name: Verify bundled font exists and is reasonable size
@@ -92,22 +58,12 @@ PY
       - name: Verify install.sh is executable
         run: |
           test -x install.sh || { echo "::error::install.sh not executable"; exit 1; }
-          # dry-syntax check (don't actually link in CI)
           bash -n install.sh
           echo "install.sh syntax ok"
 
-      - name: Render smoke test (deterministic output presence)
+      - name: Verify every example output.mp4 plays
         run: |
-          # examples の output.mp4 が repo に track 済みであることを確認
-          # 真の md5 一致は Mac/Linux ffmpeg version 差で破綻するため
-          # ここでは「output.mp4 が存在 + ffprobe で読める + duration > 1s」だけ assert
           set -e
           for f in examples/*/output.mp4; do
-            test -f "$f" || { echo "::error::$f missing"; exit 1; }
-            DUR=$(ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 "$f")
-            echo "$f: dur=${DUR}s"
-            python3 -c "
-dur = float('$DUR')
-assert dur > 1.0, f'$f too short: {dur}s'
-"
+            python3 .github/workflows/scripts/check_output_mp4.py "$f"
           done
