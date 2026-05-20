@@ -65,7 +65,17 @@ For each patch object in `patches.json`:
 
 Unknown patch types: leave a warning in the user message; do not modify input.json.
 
-After applying patches, write the updated input.json. Cache directories (`work/cache/<segment_hash>/`) are preserved so unchanged segments skip re-fetch.
+After applying patches, write the updated input.json. Then recompute segment hashes:
+
+```bash
+python3 scripts/segment_hash.py projects/<name>/input.json \
+  --diff projects/<name>/history/round_<N-1>/segment_hashes.json \
+  > projects/<name>/history/round_<N>/segment_hash_diff.json
+```
+
+The diff lists `changed` / `unchanged` / `removed` segment ids. For each segment in `unchanged`, skip Stage 1/2/4 (fetch + tts) and reuse `work/cache/<segment_hash>/` artifacts. For `changed` segments, re-run all stages. For `removed`, garbage-collect `work/cache/<hash>/` to free disk.
+
+Save the new hashes to `projects/<name>/history/round_<N>/segment_hashes.json` for the next diff.
 
 ### Escalation (round 3 with blocker > 0)
 
