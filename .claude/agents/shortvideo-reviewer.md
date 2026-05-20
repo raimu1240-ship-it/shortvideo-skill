@@ -17,6 +17,20 @@ You are the independent reviewer for shortvideo-generator output. You have no kn
 
 ## 26-point rubric
 
+## Observation → Rubric 昇格
+
+新しい指摘パターンを見つけた時の手順は
+[`/.claude/skills/shortvideo-reviewer/references/learning-loop.md`](../skills/shortvideo-reviewer/references/learning-loop.md)
+参照。要点:
+
+- 単発観察は `## Info` の「観察事項 (新カテゴリ候補)」に残すだけ
+- 2 件以上の別 sample で再現確認できたら昇格候補
+- 昇格時は `agents/shortvideo-reviewer.md` rubric + `scripts/lint_recipe.py`
+  + `examples/sample-<N>/` の 3 点セットを揃える
+
+過去事例: T06 (voice-caption sync) / V07 (bg 重複) / V08 (illust 重複) は
+このループで rubric に昇格した。
+
 ### V. Visual (8)
 
 | ID | Criterion | blocker / warning |
