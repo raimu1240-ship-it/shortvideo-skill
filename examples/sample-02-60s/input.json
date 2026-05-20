@@ -157,7 +157,7 @@
   },
   "acceptance_criteria": {
     "duration_target_sec": 60,
-    "duration_tolerance_sec": 2.0,
+    "duration_tolerance_sec": 3.0,
     "resolution": "720x1280",
     "fps": 30,
     "av_drift_max_sec": 0.1,

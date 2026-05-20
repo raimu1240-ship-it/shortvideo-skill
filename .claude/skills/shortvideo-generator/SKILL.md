@@ -81,13 +81,26 @@ Read the contact sheet via the Read tool and judge visually: does every frame lo
 
 Only proceed when every segment has `contact_sheet_passed: true`.
 
-### Stage 4 — narration
+### Stage 4 — narration (per-segment)
 
 ```bash
-python3 scripts/tts_elevenlabs.py --text "<joined voice_text>" projects/$1/work/voice.mp3
+python3 scripts/tts_elevenlabs.py --per-segment \
+  --input-json projects/$1/input.json \
+  --out-dir projects/$1/work/voices
 ```
 
-The script auto-switches: if `ELEVENLABS_API_KEY` is in `.env`, uses ElevenLabs Morioki; else uses macOS `say -v Otoya`. Get the true duration with `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1 projects/$1/work/voice.mp3` and verify total sums to within `acceptance_criteria.duration_tolerance_sec`.
+Each segment's `voice_text` is rendered to a separate `voice_<sid>.mp3` under
+`work/voices/`, and `work/voices/durations.json` records the actual ffprobe
+duration per segment. Stage 6 (render) reads `durations.json` and overrides
+each `segment.duration_sec` with the measured voice length, so the rendered
+video duration ≒ voice duration (no `-shortest` truncation, no trailing silence).
+
+If `ELEVENLABS_API_KEY` is in `.env`, ElevenLabs Morioki is used; otherwise
+macOS `say -v Otoya`.
+
+Legacy single-mode (`python3 scripts/tts_elevenlabs.py --text "..." voice.mp3`)
+is still supported for backwards compat — render falls back to legacy when
+`durations.json` is absent.
 
 ### Stage 5 — captions + bubbles
 

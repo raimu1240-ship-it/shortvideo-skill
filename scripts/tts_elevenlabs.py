@@ -80,17 +80,94 @@ def tts_elevenlabs(text: str, out_path: Path, api_key: str, voice_id: str) -> No
         tts_say(text, out_path)
 
 
+def _ffprobe_dur(path: Path) -> float:
+    r = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+         "-of", "default=nw=1:nk=1", str(path)],
+        capture_output=True, text=True, check=True,
+    )
+    return float(r.stdout.strip())
+
+
+def _resolve_tts(api_key: str | None, force_say: bool):
+    """Returns (tts_fn(text, path), provider_label)."""
+    if api_key and not force_say:
+        voice_id = (os.environ.get("ELEVENLABS_VOICE_ID")
+                    or "8EkOjt4xTPGMclNlh1pk")
+        def _fn(text, path):
+            tts_elevenlabs(text, path, api_key, voice_id)
+        return _fn, "elevenlabs"
+    return (lambda text, path: tts_say(text, path)), "say"
+
+
+def main_per_segment(input_json: Path, out_dir: Path, env_path: Path,
+                     force_say: bool) -> int:
+    """input.json の各 segment.voice_text を別 mp3 にして出力、各 voice
+    の実測 duration を <out_dir>/durations.json にまとめる。renderer が
+    これを読んで segment.duration_sec を上書きする。"""
+    data = json.loads(input_json.read_text(encoding="utf-8"))
+    out_dir.mkdir(parents=True, exist_ok=True)
+    env = load_env(env_path)
+    api_key = env.get("ELEVENLABS_API_KEY") or os.environ.get("ELEVENLABS_API_KEY")
+    tts_fn, provider = _resolve_tts(api_key, force_say)
+    print(f"[tts per-segment] provider={provider}", file=sys.stderr)
+
+    durations: dict[str, float] = {}
+    for seg in data.get("scenario", {}).get("segments", []):
+        sid = seg["id"]
+        text = seg.get("voice_text", "")
+        if not text:
+            print(f"[tts per-segment] skip {sid}: empty voice_text",
+                  file=sys.stderr)
+            continue
+        out_mp3 = out_dir / f"voice_{sid}.mp3"
+        tts_fn(text, out_mp3)
+        durations[sid] = _ffprobe_dur(out_mp3)
+        print(f"[tts per-segment] {sid}: {durations[sid]:.2f}s -> {out_mp3.name}",
+              file=sys.stderr)
+
+    dur_json = out_dir / "durations.json"
+    dur_json.write_text(json.dumps(durations, ensure_ascii=False, indent=2))
+    print(json.dumps({"durations_json": str(dur_json),
+                      "segments": len(durations),
+                      "total_sec": sum(durations.values()),
+                      "provider": provider}))
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("text_or_file", help="text content or path to .txt file")
-    ap.add_argument("output_mp3")
+    ap.add_argument("text_or_file", nargs="?",
+                    help="text content or path to .txt file (single mode)")
+    ap.add_argument("output_mp3", nargs="?",
+                    help="output mp3 path (single mode)")
     ap.add_argument("--text", action="store_true",
                     help="treat first arg as inline text instead of file path")
     ap.add_argument("--env", default=str(Path(__file__).parent.parent / ".env"))
     ap.add_argument("--force-say", action="store_true",
                     help="skip ElevenLabs even if API key is set")
+    # per-segment mode
+    ap.add_argument("--per-segment", action="store_true",
+                    help="read input.json and emit voice_<sid>.mp3 per segment")
+    ap.add_argument("--input-json",
+                    help="input.json path (required with --per-segment)")
+    ap.add_argument("--out-dir",
+                    help="output directory for voice_<sid>.mp3 + durations.json "
+                         "(required with --per-segment)")
     args = ap.parse_args()
 
+    if args.per_segment:
+        if not args.input_json or not args.out_dir:
+            print("[tts] --per-segment requires --input-json and --out-dir",
+                  file=sys.stderr)
+            return 1
+        return main_per_segment(Path(args.input_json), Path(args.out_dir),
+                                Path(args.env), args.force_say)
+
+    # single-mode (legacy)
+    if not args.text_or_file or not args.output_mp3:
+        print("[tts] single mode needs text_or_file + output_mp3", file=sys.stderr)
+        return 1
     if args.text or not Path(args.text_or_file).exists():
         text = args.text_or_file
     else:
@@ -100,20 +177,13 @@ def main() -> int:
     out.parent.mkdir(parents=True, exist_ok=True)
     env = load_env(Path(args.env))
     api_key = env.get("ELEVENLABS_API_KEY") or os.environ.get("ELEVENLABS_API_KEY")
-    voice_id = (env.get("ELEVENLABS_VOICE_ID")
-                or os.environ.get("ELEVENLABS_VOICE_ID")
-                or "8EkOjt4xTPGMclNlh1pk")
-
-    if api_key and not args.force_say:
-        print(f"[tts] using ElevenLabs voice {voice_id}", file=sys.stderr)
-        tts_elevenlabs(text, out, api_key, voice_id)
-    else:
-        print("[tts] using macOS say -v Otoya (no API key)", file=sys.stderr)
-        tts_say(text, out)
+    tts_fn, provider = _resolve_tts(api_key, args.force_say)
+    print(f"[tts] using {provider}", file=sys.stderr)
+    tts_fn(text, out)
 
     size = out.stat().st_size
-    print(json.dumps({"output": str(out), "size_bytes": size, "provider":
-                      "elevenlabs" if (api_key and not args.force_say) else "say"}))
+    print(json.dumps({"output": str(out), "size_bytes": size,
+                      "provider": provider}))
     return 0
 
 

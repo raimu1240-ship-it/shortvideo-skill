@@ -186,6 +186,7 @@ def main() -> int:
     work = Path(args.work_dir)
     captions_dir = work / "captions"
     assets_dir = work / "assets"
+    voices_dir = work / "voices"
     work.mkdir(parents=True, exist_ok=True)
 
     segments = data["scenario"]["segments"]
@@ -193,47 +194,95 @@ def main() -> int:
         print("[render] ERROR: no segments", file=sys.stderr)
         return 1
 
-    # Stage A: 各シーンの bg trim+scale
+    # per-segment TTS が走っていれば voice 実測 duration で segment.duration_sec を
+    # 上書きして A/V を時間軸で揃える。justification: voice 6.89s / segment 5s の
+    # ような時間軸ズレを根本解消する。durations.json が無ければ legacy 動作。
+    durations_json = voices_dir / "durations.json"
+    per_segment_voice = durations_json.exists()
+    if per_segment_voice:
+        durations = json.loads(durations_json.read_text(encoding="utf-8"))
+        for seg in segments:
+            if seg["id"] in durations:
+                seg["duration_sec"] = float(durations[seg["id"]])
+        print(f"[render] per-segment voice mode: durations={durations}",
+              file=sys.stderr)
+
+    # Stage A: 各シーンの bg fastcut + overlay
     scene_videos = []
     for seg in segments:
         bg = prepare_segment(seg, work, w, h, fps)
         scene_v = overlay_segment(seg, bg, work, captions_dir, assets_dir, w, h)
         scene_videos.append(scene_v)
 
-    # Stage B: concat
-    concat_list = work / "concat.txt"
-    # solve: concat demuxer は concat.txt のあるディレクトリ基準でパス解決するため、
-    # write 側で絶対パスに揃える。相対パスのまま書くと二重パスで開けなくなる。
-    concat_list.write_text("\n".join(f"file '{p.resolve()}'"
-                                     for p in scene_videos) + "\n")
-    bg_concat = work / "video_only.mp4"
-    run([
-        "ffmpeg", "-y", "-f", "concat", "-safe", "0",
-        "-i", str(concat_list), "-c", "copy", str(bg_concat),
-    ])
-
-    # Stage C: voice mux
-    voice = work / "voice.mp3"
-    if voice.exists():
+    # Stage B: per-segment voice mux (or single mux fallback)
+    if per_segment_voice:
+        # 各 scene に対応する voice をそれぞれ mux してから concat
+        av_scenes = []
+        for seg, scene_v in zip(segments, scene_videos):
+            voice_mp3 = voices_dir / f"voice_{seg['id']}.mp3"
+            av_out = work / "stages" / f"scene_{seg['id']}_av.mp4"
+            if voice_mp3.exists():
+                run([
+                    "ffmpeg", "-y",
+                    "-i", str(scene_v),
+                    "-i", str(voice_mp3),
+                    "-map", "0:v", "-map", "1:a",
+                    "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
+                    "-shortest",
+                    str(av_out),
+                ])
+            else:
+                # voice 無い segment は無音 padding (segment.duration_sec ぶん)
+                run([
+                    "ffmpeg", "-y",
+                    "-i", str(scene_v),
+                    "-f", "lavfi",
+                    "-i", f"anullsrc=channel_layout=mono:sample_rate=44100",
+                    "-map", "0:v", "-map", "1:a",
+                    "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
+                    "-shortest",
+                    str(av_out),
+                ])
+            av_scenes.append(av_out)
+        # concat (全 scene が同じ codec/sample_rate なので -c copy OK)
+        concat_list = work / "concat.txt"
+        concat_list.write_text("\n".join(f"file '{p.resolve()}'"
+                                         for p in av_scenes) + "\n")
         run([
-            "ffmpeg", "-y",
-            "-i", str(bg_concat),
-            "-i", str(voice),
-            "-map", "0:v", "-map", "1:a",
-            "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
-            "-shortest",
-            args.output_mp4,
+            "ffmpeg", "-y", "-f", "concat", "-safe", "0",
+            "-i", str(concat_list), "-c", "copy", args.output_mp4,
         ])
     else:
-        # solve: voice 無ければ video_only をそのまま rename (無音 mp4)
+        # legacy: video のみ concat → 全体 voice.mp3 を mux
+        concat_list = work / "concat.txt"
+        concat_list.write_text("\n".join(f"file '{p.resolve()}'"
+                                         for p in scene_videos) + "\n")
+        bg_concat = work / "video_only.mp4"
         run([
-            "ffmpeg", "-y", "-i", str(bg_concat),
-            "-c", "copy", args.output_mp4,
+            "ffmpeg", "-y", "-f", "concat", "-safe", "0",
+            "-i", str(concat_list), "-c", "copy", str(bg_concat),
         ])
+        voice = work / "voice.mp3"
+        if voice.exists():
+            run([
+                "ffmpeg", "-y",
+                "-i", str(bg_concat),
+                "-i", str(voice),
+                "-map", "0:v", "-map", "1:a",
+                "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
+                "-shortest",
+                args.output_mp4,
+            ])
+        else:
+            run([
+                "ffmpeg", "-y", "-i", str(bg_concat),
+                "-c", "copy", args.output_mp4,
+            ])
 
     out_size = Path(args.output_mp4).stat().st_size
     print(json.dumps({"output": args.output_mp4, "size_bytes": out_size,
-                      "segments": len(segments)}))
+                      "segments": len(segments),
+                      "per_segment_voice": per_segment_voice}))
     return 0
 
 
