@@ -1,0 +1,62 @@
+{
+  "project_name": "sample-01-10s",
+  "duration_target_sec": 10,
+  "resolution": "720x1280",
+  "fps": 30,
+  "seed": 42,
+  "voice_provider": "auto",
+  "voice_duration_source": "ffprobe",
+  "persona": {
+    "age": 30,
+    "gender": "male",
+    "context": "工場派遣の働き方"
+  },
+  "scenario": {
+    "segments": [
+      {
+        "id": "s1",
+        "duration_sec": 5.0,
+        "bg_query": "japan train station",
+        "illust_query": "困った 男性 パソコン",
+        "voice_text": "",
+        "caption_main": ["自分に合う働き方って、", "なんだろうって。"],
+        "bubble_text": "迷ってたんだよね",
+        "sub_delay": 2.5,
+        "contact_sheet_passed": true
+      },
+      {
+        "id": "s2",
+        "duration_sec": 5.0,
+        "bg_query": "japan park",
+        "illust_query": "万能ビジネスマン",
+        "voice_text": "",
+        "caption_main": ["無理しないことが、", "続けられるコツ。"],
+        "bubble_text": "やってみて分かった",
+        "sub_delay": 2.5,
+        "contact_sheet_passed": false
+      }
+    ]
+  },
+  "acceptance_criteria": {
+    "duration_target_sec": 10,
+    "duration_tolerance_sec": 0.5,
+    "resolution": "720x1280",
+    "fps": 30,
+    "av_drift_max_sec": 0.1,
+    "must_have": [
+      "caption_main_per_segment",
+      "irasutoya_per_segment",
+      "japanese_bg_only"
+    ],
+    "must_not_have": [
+      "pr_badge",
+      "header_brand_bar",
+      "footer_brand_bar",
+      "logo_persistent_overlay",
+      "product_card",
+      "bgm",
+      "direct_sales_caption"
+    ]
+  },
+  "notes": "2026-05-20 session で実際に作った 10s mock。reviewer の few-shot calibration 教材として保管。v2 段階では s2 の bg と illust に問題あり (review_report.md 参照)"
+}

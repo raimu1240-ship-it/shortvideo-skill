@@ -1,0 +1,143 @@
+#!/usr/bin/env python3
+"""input.json の罠 9 件 + acceptance_criteria 違反を pre-check する。
+Stage 0 で必ず通す mechanical gate。
+
+Usage: python3 lint_recipe.py <input.json>
+Exit: 0 = clean / 1 = error / 2 = warning only
+"""
+import argparse
+import json
+import sys
+from pathlib import Path
+
+# justification: brand-name案件で観測した字数閾値。
+# 8 字超え = 視認性低下 warn / 12 字超え = 1080x1920 で letterbox はみ出し error
+CAPTION_WARN_CHARS = 8
+CAPTION_ERROR_CHARS = 12
+
+# justification: サブテロップ即時表示は視聴者が読み切ってスクロール → 公式罠 4
+SUB_DELAY_MIN_SEC = 1.5
+
+# PR 色 ng 文言パターン (caption に含まれていたら error)
+PR_NG_KEYWORDS = [
+    "PR｜", "PR|",   # PR バッジ風 prefix
+    "ご検討ください", "お試しください", "ぜひ", "おすすめ", "詳しくはこちら",
+    "資料請求", "今すぐ", "無料相談",
+]
+
+# japanese_bg_only を要求するときの NG ヒント
+OVERSEAS_QUERY_HINTS = ["new york", "los angeles", "paris", "london", "berlin"]
+
+
+def check(data: dict) -> tuple[list[str], list[str]]:
+    errors: list[str] = []
+    warns: list[str] = []
+    ac = data.get("acceptance_criteria", {})
+    must_have = set(ac.get("must_have", []))
+    must_not_have = set(ac.get("must_not_have", []))
+
+    # 1. PR バッジ勝手追加 (must_not_have 違反)
+    if "pr_badge" in must_not_have and data.get("pr_badge"):
+        errors.append("[1] pr_badge present but must_not_have lists it")
+    if "bgm" in must_not_have and data.get("bgm"):
+        errors.append("[1b] bgm present but must_not_have lists it")
+    if "logo_persistent_overlay" in must_not_have and data.get("logo_overlay"):
+        errors.append("[1c] logo_overlay present but must_not_have lists it")
+
+    # 2. Y 座標 (Y_TABLE 範囲外指定があれば error。今は schema 側で吸収するため skip)
+    res = data.get("resolution")
+    if res not in {"720x1280", "1080x1920"}:
+        errors.append(f"[2] unsupported resolution {res}")
+
+    # 3 / 5. caption 字数
+    for seg in data.get("scenario", {}).get("segments", []):
+        cap = seg.get("caption_main")
+        lines = cap if isinstance(cap, list) else [cap] if cap else []
+        for line in lines:
+            n = len(line)
+            if n > CAPTION_ERROR_CHARS:
+                errors.append(f"[3] caption line too long ({n} chars) in {seg['id']}: {line!r}")
+            elif n > CAPTION_WARN_CHARS:
+                warns.append(f"[3w] caption line {n} chars (>8) in {seg['id']}: {line!r}")
+            for kw in PR_NG_KEYWORDS:
+                if kw in line:
+                    errors.append(f"[T02] PR-tone keyword {kw!r} in {seg['id']} caption: {line!r}")
+
+    # 4. sub_delay
+    for seg in data.get("scenario", {}).get("segments", []):
+        sd = seg.get("sub_delay")
+        if seg.get("caption_sub") and (sd is None or sd < SUB_DELAY_MIN_SEC):
+            warns.append(f"[4] sub_delay={sd} < {SUB_DELAY_MIN_SEC} in {seg['id']}")
+
+    # 5. voice duration source = ffprobe required
+    if data.get("voice_duration_source") and data["voice_duration_source"] != "ffprobe":
+        errors.append("[5] voice_duration_source must be 'ffprobe', not whisper-end")
+
+    # 7. voice text vs caption 表記差 (漢字優先 diff)
+    for seg in data.get("scenario", {}).get("segments", []):
+        v = seg.get("voice_text") or ""
+        cs = seg.get("caption_main")
+        c = "".join(cs) if isinstance(cs, list) else (cs or "")
+        # 簡易: 一方にしかない漢字がもう一方にひらがなで存在しないか
+        # ここでは ascii-only check で十分なエラー検出は別途
+        if v and c:
+            v_kana = sum(1 for ch in v if "぀" <= ch <= "ゟ")
+            c_kanji = sum(1 for ch in c if "一" <= ch <= "鿿")
+            v_kanji = sum(1 for ch in v if "一" <= ch <= "鿿")
+            if c_kanji > 0 and v_kanji == 0 and v_kana > 4:
+                warns.append(f"[7] voice all-kana but caption has kanji in {seg['id']} "
+                             f"(accent risk)")
+
+    # 8. japanese_bg_only に違反していないか query 文字列で簡易ヒント検出
+    if "japanese_bg_only" in must_have:
+        for seg in data.get("scenario", {}).get("segments", []):
+            q = (seg.get("bg_query") or "").lower()
+            for h in OVERSEAS_QUERY_HINTS:
+                if h in q:
+                    errors.append(f"[8] japanese_bg_only required but query hints overseas: "
+                                  f"{seg['id']} -> {q!r}")
+            # contact_sheet_passed フラグ
+            if seg.get("contact_sheet_passed") is False:
+                errors.append(f"[8b] contact_sheet not passed for {seg['id']} (overseas suspicion)")
+
+    # 9. CTA 重複: overlay label と caption の文字列重複検出 (label が caption に含まれる)
+    for seg in data.get("scenario", {}).get("segments", []):
+        label = seg.get("overlay_label")
+        cs = seg.get("caption_main")
+        c = "".join(cs) if isinstance(cs, list) else (cs or "")
+        if label and c and label in c:
+            warns.append(f"[9] overlay label {label!r} duplicated in caption in {seg['id']}")
+
+    return errors, warns
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("input_json")
+    ap.add_argument("--json", action="store_true",
+                    help="output JSON report instead of human text")
+    args = ap.parse_args()
+
+    data = json.loads(Path(args.input_json).read_text(encoding="utf-8"))
+    errors, warns = check(data)
+
+    if args.json:
+        print(json.dumps({"errors": errors, "warnings": warns,
+                          "input": args.input_json}, ensure_ascii=False, indent=2))
+    else:
+        for e in errors:
+            print(f"ERROR  {e}")
+        for w in warns:
+            print(f"WARN   {w}")
+        if not errors and not warns:
+            print("OK: lint clean")
+
+    if errors:
+        return 1
+    if warns:
+        return 2
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

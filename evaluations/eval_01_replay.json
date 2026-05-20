@@ -1,0 +1,33 @@
+{
+  "id": "eval_01_sample-01_replay",
+  "purpose": "v5 系縦動画レシピを再現できるか — 合格事例の baseline",
+  "skill_under_test": "shortvideo-loop",
+  "input": {
+    "project_name": "sample-01-30s-replay",
+    "duration_target_sec": 30,
+    "resolution": "1080x1920",
+    "fps": 24,
+    "scenario_segments": 5,
+    "persona": {
+      "age": 30,
+      "gender": "male",
+      "context": "工場派遣の働き方"
+    },
+    "tone": "empathy_first_person",
+    "voice_provider": "auto",
+    "bg_query_hints": ["japan train station", "japan park", "japan autumn road"]
+  },
+  "expected_behavior": [
+    "ナレーション・テロップ・差し込みイラスト全てが揃った 30 秒前後の縦動画を生成する",
+    "背景動画 5 セグメント全てが日本ロケと判定できる（海外混入 0）",
+    "テロップ文言が一人称・共感型で、PR 色（「PR｜」「brand-nameで落ち着いた」型）を含まない",
+    "ffprobe で width=1080, height=1920, fps=24/1, duration in [29.5, 30.5] を満たす",
+    "A/V drift < 0.1s",
+    "reviewer 判定で blocker=0、warning <= 2"
+  ],
+  "pass_criteria": {
+    "blocker_count": 0,
+    "warning_count_max": 2,
+    "loop_count_max": 2
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "shortvideo input.json",
+  "type": "object",
+  "required": ["project_name", "duration_target_sec", "resolution", "fps", "scenario", "acceptance_criteria"],
+  "properties": {
+    "project_name": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
+    "duration_target_sec": {"type": "number", "minimum": 5, "maximum": 90},
+    "resolution": {"enum": ["720x1280", "1080x1920"]},
+    "fps": {"enum": [24, 30]},
+    "seed": {"type": "integer", "default": 42},
+    "voice_provider": {"enum": ["auto", "say", "elevenlabs"], "default": "auto"},
+    "voice_duration_source": {"const": "ffprobe"},
+    "persona": {
+      "type": "object",
+      "properties": {
+        "age": {"type": "integer"},
+        "gender": {"enum": ["male", "female", "neutral"]},
+        "context": {"type": "string"}
+      }
+    },
+    "scenario": {
+      "type": "object",
+      "required": ["segments"],
+      "properties": {
+        "segments": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 8,
+          "items": {
+            "type": "object",
+            "required": ["id", "duration_sec", "bg_query", "voice_text", "caption_main"],
+            "properties": {
+              "id": {"type": "string", "pattern": "^s[0-9]+$"},
+              "duration_sec": {"type": "number", "minimum": 1.5, "maximum": 15},
+              "bg_query": {"type": "string"},
+              "illust_query": {"type": "string"},
+              "voice_text": {"type": "string"},
+              "caption_main": {
+                "oneOf": [
+                  {"type": "string"},
+                  {"type": "array", "items": {"type": "string"}, "minItems": 1, "maxItems": 3}
+                ]
+              },
+              "caption_sub": {"type": "string"},
+              "sub_delay": {"type": "number", "minimum": 1.5, "maximum": 6},
+              "bubble_text": {"type": "string", "maxLength": 14},
+              "overlay_label": {"type": "string"},
+              "contact_sheet_passed": {"type": "boolean"}
+            }
+          }
+        }
+      }
+    },
+    "acceptance_criteria": {
+      "type": "object",
+      "required": ["resolution", "fps", "must_have", "must_not_have"],
+      "properties": {
+        "duration_target_sec": {"type": "number"},
+        "duration_tolerance_sec": {"type": "number", "default": 0.5},
+        "resolution": {"enum": ["720x1280", "1080x1920"]},
+        "fps": {"enum": [24, 30]},
+        "av_drift_max_sec": {"type": "number", "default": 0.1},
+        "loudnorm_lufs_range": {
+          "type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2
+        },
+        "must_have": {"type": "array", "items": {"type": "string"}},
+        "must_not_have": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}

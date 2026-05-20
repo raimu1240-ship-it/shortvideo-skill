@@ -1,0 +1,21 @@
+{
+  "id": "eval_02_overseas_bg_rejection",
+  "purpose": "海外ロケの背景動画を reviewer が blocker (V01) で正しく弾けるか",
+  "skill_under_test": "shortvideo-reviewer",
+  "input": {
+    "input_json_path": "evaluations/fixtures/eval_02_input.json",
+    "output_mp4_path": "evaluations/fixtures/eval_02_output.mp4",
+    "scenario_note": "scene 2 の背景に米国 playground 遊具動画を意図的に配置。日本ロケに見えない素材"
+  },
+  "expected_behavior": [
+    "reviewer が 7 フレーム抽出後、scene 2 の背景が日本ロケに見えないことを Vision で判定",
+    "blocker として V01 (海外素材混入) を 1 件以上出す",
+    "修正案として pexels_query 差し替え or 別 video_id を提示",
+    "patch JSON 形式の修正パッチが含まれる"
+  ],
+  "pass_criteria": {
+    "blocker_must_include_id": "V01",
+    "patch_required": true
+  },
+  "notes": "2026-05-20 セッションで実際に発生したミス。Pexels の「公園」検索が米国 playground を返した。reviewer がこのパターンを必ず検出することが必須"
+}

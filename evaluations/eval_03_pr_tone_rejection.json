@@ -1,0 +1,23 @@
+{
+  "id": "eval_03_pr_tone_rejection",
+  "purpose": "PR 色・直接訴求文言を reviewer が blocker (T02) で正しく弾けるか",
+  "skill_under_test": "shortvideo-reviewer",
+  "input": {
+    "input_json_path": "evaluations/fixtures/eval_03_input.json",
+    "output_mp4_path": "evaluations/fixtures/eval_03_output.mp4",
+    "scenario_note": "テロップに「ブランド名で◯◯した」型の宣言形・煽り文言・第三者目線の解決アピールを意図的に配置"
+  },
+  "expected_behavior": [
+    "reviewer が caption テキストを Read",
+    "must_not_have の direct_sales_caption に該当することを検出",
+    "blocker として T02 (PR 色文言混入) を 1 件以上出す",
+    "修正案として一人称・共感型の代替文言（私のオリジナル）を提示",
+    "patch JSON で caption_text の差し替えパッチを返す"
+  ],
+  "pass_criteria": {
+    "blocker_must_include_id": "T02",
+    "patch_required": true,
+    "suggested_replacement_tone": "first_person_empathy"
+  },
+  "notes": "2026-05-20 セッションで実際に発生したミス。広告色全部盛り（紺ヘッダー / PR バッジ / 「落ち着いた」宣言）の動画を 1 本作ってユーザーから差し戻された。reviewer がこの広告色パターンを必ず検出することが必須"
+}

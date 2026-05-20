@@ -1,0 +1,40 @@
+{
+  "output": "examples/sample-01-10s/output.mp4",
+  "metrics": {
+    "duration_sec": 10.0,
+    "width": 720,
+    "height": 1280,
+    "fps_str": "30/1",
+    "pix_fmt": "yuv420p",
+    "codec_v": "h264",
+    "codec_a": "aac",
+    "audio_duration": 10.0,
+    "loudnorm_I": -23.85,
+    "loudnorm_TP": -9.05,
+    "loudnorm_LRA": 1.6,
+    "av_drift_sec": 0.0
+  },
+  "errors": [],
+  "warnings": [],
+  "acceptance_criteria": {
+    "duration_target_sec": 10,
+    "duration_tolerance_sec": 0.5,
+    "resolution": "720x1280",
+    "fps": 30,
+    "av_drift_max_sec": 0.1,
+    "must_have": [
+      "caption_main_per_segment",
+      "irasutoya_per_segment",
+      "japanese_bg_only"
+    ],
+    "must_not_have": [
+      "pr_badge",
+      "header_brand_bar",
+      "footer_brand_bar",
+      "logo_persistent_overlay",
+      "product_card",
+      "bgm",
+      "direct_sales_caption"
+    ]
+  }
+}
