@@ -1,5 +1,5 @@
 {
-  "output": "projects/sample-test/output.mp4",
+  "output": "examples/sample-test/output.mp4",
   "metrics": {
     "duration_sec": 6.891995,
     "width": 720,

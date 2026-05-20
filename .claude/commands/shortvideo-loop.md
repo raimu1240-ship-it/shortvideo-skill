@@ -39,7 +39,21 @@ If it exists, skip this round and tell the user "Using existing input.json. Use 
 ### Round N — Generate + Review (N = 1, 2, 3)
 
 1. Run `/shortvideo-generator <name>` (the generator skill, all Stages 0-7)
-2. Use the Skill tool to invoke `shortvideo-reviewer <name>` — this runs in a forked subagent context, so the reviewer cannot see your generation reasoning
+2. Spawn the reviewer subagent via the **Agent tool** (NOT the Skill tool — the
+   `shortvideo-reviewer` skill has `disable-model-invocation: true` and rejects
+   programmatic Skill calls by design).
+   - Prefer `subagent_type="shortvideo-reviewer"` if the host runtime exposes
+     custom agent types from `.claude/agents/`.
+   - Fallback: `subagent_type="general-purpose"` with this prompt body —
+     "You are the shortvideo-reviewer subagent. Read the agent spec at
+     `.claude/agents/shortvideo-reviewer.md` first, then execute the steps in
+     `.claude/skills/shortvideo-reviewer/SKILL.md` for project `<name>`.
+     Working directory: repo root. Required outputs:
+     `projects/<name>/review_report.md` (Markdown with `blocker=N / warning=M
+     / info=K` summary line + sections + `## Patches (JSON array)`) and
+     `projects/<name>/patches.json` (JSON array of patches)."
+   - This runs in a forked subagent context so the reviewer cannot see your
+     generation reasoning, which is the whole point.
 3. Read `projects/<name>/review_report.md` (the reviewer's summary)
 4. Copy the report to `projects/<name>/history/round_<N>/review_report.md`
 

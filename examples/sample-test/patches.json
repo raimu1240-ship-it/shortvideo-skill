@@ -1,0 +1,9 @@
+[
+  {"patch_type":"replace_bg","segment":"s2","new_query":"japan park bench morning autumn"},
+  {"patch_type":"set_field","path":"scenario.segments.0.voice_text","value":"毎日同じ通勤、これでいいのかなって、ふと立ち止まる朝があった。"},
+  {"patch_type":"set_field","path":"scenario.segments.1.voice_text","value":"自分のペースで、無理しない働き方を選んだ。それが、いちばん長く続く気がして。"},
+  {"patch_type":"rewrite_caption","segment":"s2","new_caption":["自分のペースで、","無理しない働き方を。"]},
+  {"patch_type":"replace_illust","segment":"s2","new_query":"スーツ 男性 微笑む リラックス"},
+  {"patch_type":"set_field","path":"scenario.segments.1.scrim_alpha","value":0.25},
+  {"patch_type":"set_field","path":"acceptance_criteria.loudnorm_target_i","value":-23.0}
+]

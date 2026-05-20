@@ -94,7 +94,15 @@ def overlay_segment(seg: dict, bg: Path, work_dir: Path, captions_dir: Path,
 
     if bubble.exists():
         inputs += ["-i", str(bubble)]
-        chain_parts.append(f"{prev}[{next_idx}:v]overlay=0:0[v_bb]")
+        # bubble は sub_delay 秒後にフェードイン (= main caption と同時表示を避ける)
+        # justification: ffmpeg overlay filter は timeline 'enable' 公式サポート
+        # (`ffmpeg -h filter=overlay` で "support for timeline through 'enable'")。
+        # sub_delay=0 のときは enable 無しで先頭から表示。
+        sub_delay = float(seg.get("sub_delay", 0) or 0)
+        enable_clause = f":enable='gte(t,{sub_delay})'" if sub_delay > 0 else ""
+        chain_parts.append(
+            f"{prev}[{next_idx}:v]overlay=0:0{enable_clause}[v_bb]"
+        )
         prev = "[v_bb]"
         next_idx += 1
 
