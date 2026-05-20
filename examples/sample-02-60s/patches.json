@@ -1,0 +1,20 @@
+[
+  {"patch_type":"replace_bg","segment":"s2","new_query":"japan park bench autumn"},
+  {"patch_type":"replace_bg","segment":"s4","new_query":"japan shrine path morning"},
+  {"patch_type":"replace_bg","segment":"s6","new_query":"japan riverside autumn"},
+  {"patch_type":"replace_bg","segment":"s8","new_query":"japan park sakura"},
+  {"patch_type":"replace_bg","segment":"s10","new_query":"japan kyoto temple path"},
+  {"patch_type":"replace_illust","segment":"s4","new_query":"スーツ 男性 微笑む リラックス"},
+  {"patch_type":"replace_illust","segment":"s5","new_query":"スーツ 男性 気付く 落ち着く"},
+  {"patch_type":"replace_illust","segment":"s6","new_query":"スーツ 男性 安心 一人"},
+  {"patch_type":"replace_illust","segment":"s7","new_query":"スーツ 男性 話す 穏やか"},
+  {"patch_type":"replace_illust","segment":"s9","new_query":"スーツ 男性 前向き 落ち着く"},
+  {"patch_type":"replace_illust","segment":"s10","new_query":"スーツ 男性 微笑む 確信"},
+  {"patch_type":"rewrite_caption","segment":"s3","new_caption":["正社員じゃないと、","って声もあるけど。"]},
+  {"patch_type":"rewrite_caption","segment":"s5","new_caption":["未経験から始める、","調べると意外と多い。"]},
+  {"patch_type":"rewrite_caption","segment":"s7","new_caption":["相談できる人で、","気持ちはかなり違う。"]},
+  {"patch_type":"rewrite_caption","segment":"s8","new_caption":["全部が楽じゃない、","そこは正直に。"]},
+  {"patch_type":"set_field","path":"scenario.segments.4.scrim_alpha","value":0.25},
+  {"patch_type":"set_field","path":"scenario.segments.8.scrim_alpha","value":0.25},
+  {"patch_type":"set_field","path":"acceptance_criteria.loudnorm_target_i","value":-23.0}
+]
