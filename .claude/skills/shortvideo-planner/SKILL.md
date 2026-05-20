@@ -77,6 +77,41 @@ If the user's brief implies any item in `must_not_have` (e.g. they want a "PR ba
 
 - caption_main 1 行は最大 8 字目安、12 字超は禁止 (lint_recipe.py が拒否)
 - voice_text と caption_main は漢字優先で揃える (ElevenLabs アクセント安定化)
+- voice_text と caption_main は文字集合 60% 以上 overlap させる (T06 検出回避)
+- voice_text の自然な発話長 ≈ segment.duration_sec ±0.5s。voice が短いと
+  `-shortest` で動画が切れ、長いと caption 表示が voice より先に終わる
 - sub_delay は 2.0 〜 4.0 秒、0 は禁止 (視聴者がスキップする)
 - 一人称・体験談・気付きトーン。ブランド名や商品名を caption に書かない
 - 背景は日本ロケのみ。bg_query に "japan ..." を明示
+
+## Asset query diversification (V07/V08 再発防止)
+
+本番運用で同じ素材を多数 segment で使うと「手抜き感」が出るため、planner 段で
+**最初から query を分散**させる。lint と reviewer が後段で検出するが、planner
+で予防する方が修正コストが低い。
+
+| segments 数 | 最低 unique bg_query | 最低 unique illust_query |
+|---|---|---|
+| 1-3 | 1 (制約緩) | 1 (制約緩) |
+| 4-5 | 2 | 2 |
+| 6-7 | 3 | 3 |
+| 8-10 | 4 | 4 |
+| 11+ | 5 | 5 |
+
+**ハードルール (lint と整合)**:
+- 同じ `bg_query` が segments の 50% 以上に出ない (`>=50%` で V07 blocker)
+- 同じ `illust_query` が segments の 50% 以上に出ない (`>=50%` で V08 blocker)
+- 33% 超でも warning が出るので、可能なら均等分散させる
+
+**bg_query 候補集 (10 segments 用、例)**:
+- "japan train station morning" / "tokyo subway commuter"
+- "japan park bench autumn" / "kyoto temple path"
+- "japan residential street evening" / "japan riverside walk"
+- "japan office building exterior" / "japan cafe interior"
+
+**illust_query 候補集 (共感型ペルソナ x 局面)**:
+- 困り局面: "考える 男性 困った" / "悩む 男性 パソコン" / "迷う 男性 立ち止まる"
+- 気付き局面: "穏やか 男性 笑顔" / "歩く 男性 リラックス" / "コーヒー 男性 朝"
+
+詳細な分散例は [references/scenario-templates.md](references/scenario-templates.md)
+の "Query 分散テンプレ" セクション参照。

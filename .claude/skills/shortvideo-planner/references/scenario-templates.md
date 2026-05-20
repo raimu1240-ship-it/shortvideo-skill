@@ -46,3 +46,58 @@
 4. **シーン間は jump cut で繋ぐ** — 動画 transition エフェクトは入れない
 5. **最終シーンに直接 CTA は入れない** — 視聴者が次の行動を考える余白を残す
 6. **ブランド露出は overlay レイヤ別管理** — caption 本文には書かない
+
+## Query 分散テンプレ (V07/V08 再発防止)
+
+`bg_query` / `illust_query` は segments の 50% 未満まで使い回せる。それ以上だと
+lint (V07/V08) で blocker、本番納品でも「手抜き感」が出る。各テンプレ別の推奨
+分散割り当てを示す。
+
+### 5-scene (25-35 秒) — bg 3 unique / illust 3 unique
+
+| seg | bg_query 例 | illust_query 例 |
+|---|---|---|
+| s1 | japan train station morning | 考える 男性 困った |
+| s2 | japan park bench autumn | 悩む 男性 パソコン |
+| s3 | kyoto temple path | 迷う 男性 立ち止まる |
+| s4 | japan park bench autumn | 穏やか 男性 笑顔 |
+| s5 | japan residential street evening | コーヒー 男性 朝 |
+
+bg max: 2/5 = 40% (warn 範囲内、blocker 回避)。illust 全 unique。
+
+### 7-scene (40-60 秒) — bg 4 unique / illust 4 unique
+
+| seg | bg_query 例 | illust_query 例 |
+|---|---|---|
+| s1 | japan train station morning | 考える 男性 困った |
+| s2 | japan office building exterior | 悩む 男性 パソコン |
+| s3 | japan park bench autumn | 迷う 男性 立ち止まる |
+| s4 | japan riverside walk | 穏やか 男性 笑顔 |
+| s5 | kyoto temple path | 歩く 男性 リラックス |
+| s6 | japan cafe interior | コーヒー 男性 朝 |
+| s7 | japan residential street evening | 穏やか 男性 笑顔 |
+
+bg max: 1/7 = 14% (余裕で pass)。illust max: 2/7 = 29% (pass)。
+
+### 10-scene (55-65 秒) — bg 5 unique / illust 5 unique
+
+| seg | bg_query 例 | illust_query 例 |
+|---|---|---|
+| s1 | japan train station morning | 考える 男性 困った |
+| s2 | japan office building exterior | 悩む 男性 パソコン |
+| s3 | japan park bench autumn | 迷う 男性 立ち止まる |
+| s4 | japan riverside walk | 穏やか 男性 笑顔 |
+| s5 | kyoto temple path | 歩く 男性 リラックス |
+| s6 | japan cafe interior | コーヒー 男性 朝 |
+| s7 | japan residential street evening | 穏やか 男性 笑顔 |
+| s8 | japan train station morning | 悩む 男性 パソコン |
+| s9 | japan park bench autumn | コーヒー 男性 朝 |
+| s10 | japan riverside walk | 歩く 男性 リラックス |
+
+bg max: 2/10 = 20% (pass)。illust max: 2/10 = 20% (pass)。
+
+### Anti-pattern (V07/V08 blocker を踏むパターン)
+
+- 10 segments で bg を 2 種類しか用意せず交互配置 → bg max 50% で V07 blocker
+- 6 segments 全てに同じ illust を再利用 → illust max 100% で V08 blocker
+- これらは「素材調達が手抜き」なので planner 段で叩く、generator/reviewer に頼らない
