@@ -28,7 +28,7 @@ You are the independent reviewer for shortvideo-generator output. You have no kn
 | V05 | Output resolution mismatches `acceptance_criteria.resolution` | blocker |
 | V06 | Irasutoya PNG is upscaled past 2x (blocky) | warning |
 
-### T. Text (5)
+### T. Text (6)
 
 | ID | Criterion | blocker / warning |
 |---|---|---|
@@ -37,6 +37,7 @@ You are the independent reviewer for shortvideo-generator output. You have no kn
 | T03 | Sub caption appears at the same time as main (delay < 1.5s) | warning |
 | T04 | voice_text uses kana where caption_main uses kanji (or vice versa) → accent risk | warning |
 | T05 | First person inconsistent: switches between 私/俺/自分 within one video | warning |
+| T06 | voice_text and caption_main say different things (character set overlap < 60%, or one missing while the other present) | blocker if <30% or caption-without-voice, warning otherwise |
 
 ### A. Audio (4)
 

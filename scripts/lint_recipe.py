@@ -28,6 +28,25 @@ PR_NG_KEYWORDS = [
 # japanese_bg_only を要求するときの NG ヒント
 OVERSEAS_QUERY_HINTS = ["new york", "los angeles", "paris", "london", "berlin"]
 
+# T06 voice-caption sync 閾値
+# justification: 句読点・活用差で 100% は望めないが、文字集合 overlap 60% を
+# 下回ると視聴者の耳と目で別物に聞こえる。30% 未満は明確な失敗。
+VOICE_CAPTION_OVERLAP_WARN = 0.60
+VOICE_CAPTION_OVERLAP_ERROR = 0.30
+SYNC_IGNORE_CHARS = set("、。 ,.!?！？\n\r\t「」『』()（）")
+
+
+def voice_caption_overlap(voice: str, caption: str) -> float:
+    """文字集合 Jaccard で voice と caption の意味一致率を概算する。
+    句読点等のノイズは除外。caption が voice の subset に近いほど 1.0。"""
+    v = set(voice) - SYNC_IGNORE_CHARS
+    c = set(caption) - SYNC_IGNORE_CHARS
+    if not v or not c:
+        return 0.0
+    inter = v & c
+    union = v | c
+    return len(inter) / len(union)
+
 
 def check(data: dict) -> tuple[list[str], list[str]]:
     errors: list[str] = []
@@ -107,6 +126,30 @@ def check(data: dict) -> tuple[list[str], list[str]]:
         c = "".join(cs) if isinstance(cs, list) else (cs or "")
         if label and c and label in c:
             warns.append(f"[9] overlay label {label!r} duplicated in caption in {seg['id']}")
+
+    # T06. voice-caption sync: voice_text と caption_main が意味的に揃っているか
+    for seg in data.get("scenario", {}).get("segments", []):
+        voice = seg.get("voice_text", "") or ""
+        cs = seg.get("caption_main")
+        cap = "".join(cs) if isinstance(cs, list) else (cs or "")
+        if cap and not voice:
+            errors.append(f"[T06] caption_main present but voice_text empty in {seg['id']} "
+                          f"— viewer hears nothing while reading text")
+            continue
+        if voice and not cap:
+            warns.append(f"[T06w] voice_text present but caption_main empty in {seg['id']} "
+                         f"— spoken line has no on-screen anchor")
+            continue
+        if voice and cap:
+            ratio = voice_caption_overlap(voice, cap)
+            if ratio < VOICE_CAPTION_OVERLAP_ERROR:
+                errors.append(f"[T06] voice/caption character overlap {ratio:.2f} "
+                              f"< {VOICE_CAPTION_OVERLAP_ERROR} in {seg['id']} "
+                              f"— voice and caption likely say different things")
+            elif ratio < VOICE_CAPTION_OVERLAP_WARN:
+                warns.append(f"[T06w] voice/caption overlap {ratio:.2f} "
+                             f"< {VOICE_CAPTION_OVERLAP_WARN} in {seg['id']} "
+                             f"— check if narration matches on-screen text")
 
     return errors, warns
 

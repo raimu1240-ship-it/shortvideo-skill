@@ -19,6 +19,13 @@ PIX_FMT = "yuv420p"
 CRF = 23
 PRESET = "medium"
 
+# justification: ユーザー提示の正解レイアウト (Image #1) に合わせ、illust は
+# 動画高さの 22% に縮小 + 上端 32% に配置。bubble と caption は make_captions.py
+# 側で同じ ILLUST_*_RATIO を使って真下に置く。両モジュールで定数共有しないため
+# ここで揃える必要がある — 変える時は make_captions.py も合わせて変える。
+ILLUST_H_RATIO = 0.22
+ILLUST_TOP_Y_RATIO = 0.32
+
 
 def run(cmd: list[str]) -> None:
     print(f"$ {' '.join(str(c) for c in cmd)}", file=sys.stderr)
@@ -63,18 +70,24 @@ def overlay_segment(seg: dict, bg: Path, work_dir: Path, captions_dir: Path,
     prev = "[0:v]"
     next_idx = 1
 
-    # ダーカン (scrim) を内部で生成しオーバーレイ
+    # 弱い scrim — 背景の色味は活かしつつ caption 可読性だけ確保。
+    # justification: 強い scrim (0.35) は背景の質感を殺すためユーザー指摘の正解では
+    # 公園の色彩が活きている。0.15 で薄めに敷くだけにする。
     chain_parts.append(
-        f"color=c=black@0.35:s={w}x{h}:d={seg['duration_sec']}[scrim]"
+        f"color=c=black@0.15:s={w}x{h}:d={seg['duration_sec']}[scrim]"
     )
     chain_parts.append(f"{prev}[scrim]overlay=0:0[v_scrim]")
     prev = "[v_scrim]"
 
     if illust and illust.exists():
         inputs += ["-i", str(illust)]
+        target_h = int(h * ILLUST_H_RATIO)
+        top_y = int(h * ILLUST_TOP_Y_RATIO)
         chain_parts.append(
-            f"{prev}[{next_idx}:v]"
-            f"overlay=(W-w)/2:{int(h * 0.30)}[v_il]"
+            f"[{next_idx}:v]scale=-1:{target_h}[il_{sid}]"
+        )
+        chain_parts.append(
+            f"{prev}[il_{sid}]overlay=(W-w)/2:{top_y}[v_il]"
         )
         prev = "[v_il]"
         next_idx += 1

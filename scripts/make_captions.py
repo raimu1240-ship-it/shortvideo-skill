@@ -15,21 +15,34 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 # Y-coordinate table for letterbox-positioned captions.
-# justification: brand-name v5 で実測したテロップ Y 座標。
-# main: 映像領域下の暗幕、sub: フッター帯の上
+# justification: ユーザー提示の正解レイアウト (Image #1, 2026-05-20) に合わせ、
+# illust=h*0.22 / illust_top=h*0.32 と整合させて bubble は illust 真下、
+# main caption は画面中央〜やや下に置く。明朝細字 + stroke 無しで柔らかく。
+ILLUST_H_RATIO = 0.22
+ILLUST_TOP_Y_RATIO = 0.32
 Y_TABLE = {
-    "720x1280":  {"main_y": 820, "sub_y": 1020, "main_size": 52, "sub_size": 44},
-    "1080x1920": {"main_y": 1230, "sub_y": 1530, "main_size": 78, "sub_size": 66},
+    "720x1280":  {"main_y": 810, "sub_y": 1080, "main_size": 44, "sub_size": 38},
+    "1080x1920": {"main_y": 1215, "sub_y": 1620, "main_size": 66, "sub_size": 56},
 }
 
 
 def resolve_font() -> str:
-    """fc-match で日本語太字を解決。フォールバック多段。"""
+    """フォント解決順:
+    1. repo bundle (fonts/NotoSansCJKjp-Regular.otf) — v5 と同じ font で再現性確保
+    2. fc-match で Noto Sans CJK JP / Noto Sans JP
+    3. システム明朝 fallback
+
+    justification: v5 で実績ある NotoSansCJKjp-Regular を最優先にして全社員で
+    同一の見た目を担保する。Mac には標準で入っていないので bundle 必須。"""
+    bundled = (Path(__file__).resolve().parent.parent / "fonts"
+               / "NotoSansCJKjp-Regular.otf")
+    if bundled.exists():
+        return str(bundled)
     candidates = [
-        "Hiragino Sans W7",
-        "Hiragino Kaku Gothic ProN W6",
-        "Noto Sans CJK JP Bold",
-        "Noto Sans JP Bold",
+        "Noto Sans CJK JP",
+        "Noto Sans JP",
+        "Hiragino Sans W4",
+        "Hiragino Mincho ProN W3",
     ]
     for name in candidates:
         try:
@@ -40,11 +53,7 @@ def resolve_font() -> str:
                 return path
         except (subprocess.TimeoutExpired, FileNotFoundError):
             continue
-    # ultimate fallback
-    fallback = "/System/Library/Fonts/ヒラギノ角ゴシック W7.ttc"
-    if Path(fallback).exists():
-        return fallback
-    raise FileNotFoundError("no Japanese bold font found")
+    raise FileNotFoundError("no usable Japanese font; bundle fonts/NotoSansCJKjp-Regular.otf")
 
 
 def make_caption_png(out_path: Path, lines: list[str], y_top: int,
@@ -62,7 +71,7 @@ def make_caption_png(out_path: Path, lines: list[str], y_top: int,
         x = (w - tw) // 2
         sdraw.text((x + 3, y + 3), line, font=font, fill=(0, 0, 0, 180))
         y += line_h
-    shadow = shadow.filter(ImageFilter.GaussianBlur(radius=6))
+    shadow = shadow.filter(ImageFilter.GaussianBlur(radius=8))
     img = Image.alpha_composite(img, shadow)
     draw = ImageDraw.Draw(img)
     y = y_top
@@ -70,8 +79,8 @@ def make_caption_png(out_path: Path, lines: list[str], y_top: int,
         bbox = draw.textbbox((0, 0), line, font=font)
         tw = bbox[2] - bbox[0]
         x = (w - tw) // 2
-        draw.text((x, y), line, font=font, fill=(255, 255, 255, 255),
-                  stroke_width=2, stroke_fill=(0, 0, 0, 200))
+        # 明朝細字なので stroke を打つと AI 臭。白文字 + 影だけで成立させる
+        draw.text((x, y), line, font=font, fill=(255, 255, 255, 255))
         y += line_h
     img.save(out_path)
 
@@ -102,6 +111,8 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("input_json")
     ap.add_argument("output_dir")
+    ap.add_argument("--font",
+                    help="override font (absolute path to .ttc/.otf/.ttf)")
     args = ap.parse_args()
 
     data = json.loads(Path(args.input_json).read_text(encoding="utf-8"))
@@ -112,7 +123,7 @@ def main() -> int:
         return 1
     w, h = (int(x) for x in res.split("x"))
     yconf = Y_TABLE[res]
-    font_path = resolve_font()
+    font_path = args.font if args.font else resolve_font()
 
     out_dir = Path(args.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -128,8 +139,9 @@ def main() -> int:
             written.append(str(p))
         if seg.get("bubble_text"):
             p = out_dir / f"bubble_{sid}.png"
-            # bubble の中心 Y は main の上 (illust と重ねる位置)
-            bubble_y = yconf["main_y"] - int(font_size_default(h) * 1.6)
+            # bubble は illust の真下に密着 (illust_top + illust_h + 30px)
+            illust_bottom = int(h * ILLUST_TOP_Y_RATIO) + int(h * ILLUST_H_RATIO)
+            bubble_y = illust_bottom + 30
             make_bubble_png(p, seg["bubble_text"], bubble_y,
                             font_path, w, h)
             written.append(str(p))
