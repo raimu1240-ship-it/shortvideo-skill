@@ -1,7 +1,7 @@
 # Review Report — sample-03-60s-pass
 
 ## Summary
-blocker=0 / warning=1 / info=0
+blocker=0 / warning=0 / info=0
 
 ## Blocker
 
@@ -9,10 +9,7 @@ blocker=0 / warning=1 / info=0
 
 ## Warning
 
-### A01 loudnorm I=-25.34 LUFS (全体, t=0-56s)
-- 観測: ffprobe_quality.json で `loudnorm_I=-25.34`、acceptance_criteria.loudnorm_lufs_range=[-25,-21] の下限を 0.34 LUFS 下回る。聴感では「やや小さい」程度。
-- fix: render_video.py に ffmpeg loudnorm 2-pass を組み込めば自動 -23 LUFS 固定にできる (Phase 5 候補)。
-- 配信影響: 配信側の自動ノーマライズで他動画と微差が出る程度、配信不可レベルではない。
+なし ✓ — Phase 5.4 で render_video.py に ffmpeg loudnorm filter (`-af loudnorm=I=-23:LRA=11:tp=-1.5`) を組み込み、A01 (loudnorm 範囲外) が完全解消。ffprobe で loudnorm_I=-22.99 (target -23 ぴったり)、人間目視で音量も自然と確認 (verdict=pass)。
 
 ## Info
 

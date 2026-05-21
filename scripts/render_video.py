@@ -292,9 +292,23 @@ def main() -> int:
         concat_list = work / "concat.txt"
         concat_list.write_text("\n".join(f"file '{p.resolve()}'"
                                          for p in av_scenes) + "\n")
+        # Phase 5.4: 2 step で audio loudnorm を当てる。
+        # justification: 各 voice の単独 LUFS は say -v Otoya デフォルトで -25 LUFS
+        # 付近、acceptance_criteria [-25, -21] の下限ギリギリ → A01 warning 残存
+        # (sample-03 で観測)。最終 concat 後に video=copy + audio re-encode で
+        # loudnorm=I=-23:LRA=11:tp=-1.5 を一発、frame は完全保持で audio だけ
+        # broadcast 基準 (-23 LUFS) に揃える。
+        intermediate = work / "concat_pre_loudnorm.mp4"
         run([
             "ffmpeg", "-y", "-f", "concat", "-safe", "0",
-            "-i", str(concat_list), "-c", "copy", args.output_mp4,
+            "-i", str(concat_list), "-c", "copy", str(intermediate),
+        ])
+        run([
+            "ffmpeg", "-y", "-i", str(intermediate),
+            "-c:v", "copy",
+            "-af", "loudnorm=I=-23:LRA=11:tp=-1.5",
+            "-c:a", "aac", "-b:a", "192k",
+            args.output_mp4,
         ])
     else:
         # legacy: video のみ concat → 全体 voice.mp3 を mux
