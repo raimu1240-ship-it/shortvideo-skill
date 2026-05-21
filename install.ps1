@@ -40,7 +40,10 @@ Write-Host "shortvideo-skill をインストール中..."
 foreach ($s in "shortvideo-planner", "shortvideo-generator", "shortvideo-reviewer") {
     Install-Link "$repoDir\.claude\skills\$s" "$skillDir\$s"
 }
-Install-Link "$repoDir\.claude\agents\shortvideo-reviewer.md" "$agentDir\shortvideo-reviewer.md"
+# Agents (planner / generator / reviewer の 3 つを subagent として登録)
+foreach ($a in "shortvideo-planner", "shortvideo-generator", "shortvideo-reviewer") {
+    Install-Link "$repoDir\.claude\agents\$a.md" "$agentDir\$a.md"
+}
 Install-Link "$repoDir\.claude\commands\shortvideo-loop.md" "$cmdDir\shortvideo-loop.md"
 
 Write-Host ""

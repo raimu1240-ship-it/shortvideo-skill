@@ -14,10 +14,12 @@ for s in shortvideo-planner shortvideo-generator shortvideo-reviewer; do
   echo "  linked skills/${s}"
 done
 
-# Agents
-ln -sfn "${repo_dir}/.claude/agents/shortvideo-reviewer.md" \
-        "${claude_dir}/agents/shortvideo-reviewer.md"
-echo "  linked agents/shortvideo-reviewer.md"
+# Agents (planner / generator / reviewer の 3 つを subagent として登録)
+for a in shortvideo-planner shortvideo-generator shortvideo-reviewer; do
+  ln -sfn "${repo_dir}/.claude/agents/${a}.md" \
+          "${claude_dir}/agents/${a}.md"
+  echo "  linked agents/${a}.md"
+done
 
 # Commands
 ln -sfn "${repo_dir}/.claude/commands/shortvideo-loop.md" \
