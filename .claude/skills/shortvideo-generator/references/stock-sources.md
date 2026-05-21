@@ -10,7 +10,7 @@ bg_query で Pexels が hit しない / 海外混入率が高い / 同じ素材�
 | 優先 | サイト | URL | API key | 縦動画 (9:16) | 日本ロケ素材数 | fetch script |
 |---|---|---|---|---|---|---|
 | 1 | **Pexels** | https://www.pexels.com/ja-jp/search/videos/japan/ | 不要 (HTML + WebFetch) | 中程度 (~10-20%) | 多い | `scripts/fetch_pexels_id.py` |
-| 2 | **Mixkit** | https://mixkit.co/free-stock-video/japan/ | 不要 | 少ない (~5%) | 中程度 | (未実装、Phase 4.D.3 で追加検討) |
+| 2 | **Mixkit** | https://mixkit.co/free-stock-video/japan/ | 不要 | 少ない (~5%) | 中程度 | `scripts/fetch_mixkit_id.py` |
 | 3 | Pixabay | https://pixabay.com/ja/videos/search/japan/ | あり/不要両対応 | 中程度 | 中程度 | (未実装) |
 | 4 | Coverr | https://coverr.co/s?q=japan | 不要 | 少ない | 少ない | (未実装) |
 
@@ -37,10 +37,15 @@ Mixkit は **HTML 静的に直リンク埋め込み**なので urllib + 正規�
   countryside autumn」「japan ryokan interior」) で Mixkit のほうが質の高い
   日本ロケが取れることがある
 
-fetch_mixkit_id.py の実装計画 (Phase 4.D.3 着手):
+fetch_mixkit_id.py 実装 (Phase 5.5 完了):
 1. 検索ページ HTML → 個別 video page URL リスト (slug-id pattern)
-2. 個別 page HTML → 直 mp4 URL (`assets.mixkit.co/videos/preview/...`)
-3. 1080-preview を best として返す
+2. 個別 page HTML → 直 mp4 URL (`assets.mixkit.co/videos/<id>/<id>-<height>.mp4`)
+3. 720p を best として返す (Mixkit asset の通常 max)
+
+実走仕様:
+- query は space → hyphen 連結 (例: "tokyo street" → "tokyo-street")
+- Mixkit ライブラリに該当カテゴリが無い query は 0 件で返る (例: "japan ryokan")
+- video page の `<id>` 一致で関連動画 URL を除外
 
 ## 使い分け運用
 

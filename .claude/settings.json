@@ -15,6 +15,7 @@
       "Edit(scripts/segment_hash.py)",
       "Edit(scripts/fetch_pexels_id.py)",
       "Edit(scripts/fetch_irasutoya_id.py)",
+      "Edit(scripts/fetch_mixkit_id.py)",
       "Edit(examples/**/review_report.md)",
       "Edit(examples/**/input.json)",
       "Edit(.github/workflows/**)",
