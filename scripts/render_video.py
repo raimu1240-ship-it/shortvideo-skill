@@ -54,9 +54,9 @@ def prepare_segment(seg: dict, work_dir: Path, w: int, h: int, fps: int,
     """1 セグメント分の背景動画を fastcut (2-3 秒ごとに切替) で生成する。
 
     bg_pool=None (legacy): 自 seg の bg_{sid}.mp4 だけから offset を分散して chunk 化。
-    bg_pool=list(Path)   : Phase 4.F.bug2 — 全 seg の bg src pool から
-                            各 chunk で異なる src を順次 pick する。voice/caption
-                            が進行中でも 2-3 秒ごとに別動画に切り替わる
+    bg_pool=list(Path)   : 全 seg の bg src pool から各 chunk で異なる src を
+                            順次 pick する。voice/caption が進行中でも 2-3 秒
+                            ごとに別動画に切り替わる cross-segment rotation
                             (1 テロップ=1 背景の制限なし、ユーザー指示)。
 
     Returns: (bg.mp4 path, この seg で消費した chunk 数) — caller は次 seg で
@@ -75,9 +75,9 @@ def prepare_segment(seg: dict, work_dir: Path, w: int, h: int, fps: int,
     chunk_dur = dur / n_chunks
 
     if bg_pool:
-        # Phase 4.F.bug2: 各 chunk で global ローテで別 src を pick
+        # 各 chunk で global ローテで別 src を pick (cross-segment rotation)
         # src 内 offset は 0 固定 (各 src の先頭 chunk_dur 秒を使う、複数 chunk
-        # で同 src が当たった時に時間進めるのは将来拡張)
+        # で同 src が当たった時に時間を進めるのは将来拡張)
         chunk_srcs = [bg_pool[(global_chunk_offset + i) % len(bg_pool)]
                       for i in range(n_chunks)]
         offsets = [0.0] * n_chunks
@@ -109,10 +109,10 @@ def prepare_segment(seg: dict, work_dir: Path, w: int, h: int, fps: int,
         chunk_files.append(chunk_out)
 
     # chunks を concat (絶対パス指定で demuxer 二重解決バグ回避)
-    # Phase 4.F.bug3 (round_4-fix): `-c copy` だと chunk 境界で DTS 不連続が
-    # 起き、overlay 段で 1 frame "暗転" → PNG (loop) が一瞬抜ける現象が出る
-    # (ユーザー目視で連続実証)。chunk concat 時に re-encode して PTS を
-    # 線形化することで境界を完全に滑らかにする。コスト: 数秒 / 10 seg。
+    # `-c copy` だと chunk 境界で DTS 不連続が起き、overlay 段で 1 frame
+    # "暗転" → PNG (loop) が一瞬抜ける現象が出る (人間目視で確認済み)。
+    # chunk concat 時に re-encode して PTS を線形化することで境界を完全に
+    # 滑らかにする。コスト: 数秒 / 10 seg。
     concat_list = work_dir / "stages" / f"scene_{sid}_concat.txt"
     concat_list.write_text(
         "\n".join(f"file '{p.resolve()}'" for p in chunk_files) + "\n"
@@ -153,7 +153,7 @@ def overlay_segment(seg: dict, bg: Path, work_dir: Path, captions_dir: Path,
     chain_parts.append(f"{prev}[scrim]overlay=0:0[v_scrim]")
     prev = "[v_scrim]"
 
-    # Phase 4.F.bug3: PNG input は -loop 1 -t <seg_dur> を必須にする。
+    # PNG input は -loop 1 -t <seg_dur> を必須にする。
     # 無いと PNG が 1 frame しか入力されず、overlay が 1 frame だけ表示で
     # 残り時間は下レイヤー (scrim 後の bg) のみ表示される = 「テロップ消失」現象。
     seg_dur = float(seg["duration_sec"])
@@ -241,8 +241,8 @@ def main() -> int:
               file=sys.stderr)
 
     # Stage A: 各シーンの bg fastcut + overlay
-    # Phase 4.F.bug2: bg_pool で cross-segment rotation を有効化、各 chunk が
-    # 別 segment の bg src を引く。voice/caption と独立して 2-3 秒で切り替わる。
+    # bg_pool で cross-segment rotation を有効化、各 chunk が別 segment の
+    # bg src を引く。voice/caption と独立して 2-3 秒で切り替わる。
     bg_pool: list[Path] = []
     for seg in segments:
         p = assets_dir / f"bg_{seg['id']}.mp4"
@@ -292,12 +292,12 @@ def main() -> int:
         concat_list = work / "concat.txt"
         concat_list.write_text("\n".join(f"file '{p.resolve()}'"
                                          for p in av_scenes) + "\n")
-        # Phase 5.4: 2 step で audio loudnorm を当てる。
-        # justification: 各 voice の単独 LUFS は say -v Otoya デフォルトで -25 LUFS
-        # 付近、acceptance_criteria [-25, -21] の下限ギリギリ → A01 warning 残存
-        # (sample-03 で観測)。最終 concat 後に video=copy + audio re-encode で
-        # loudnorm=I=-23:LRA=11:tp=-1.5 を一発、frame は完全保持で audio だけ
-        # broadcast 基準 (-23 LUFS) に揃える。
+        # 2 step で audio loudnorm を当てる。
+        # justification: 各 voice の単独 LUFS は say -v Otoya デフォルトで
+        # -25 LUFS 付近、acceptance_criteria [-25, -21] の下限ギリギリ →
+        # A01 warning 残存。最終 concat 後に video=copy + audio re-encode で
+        # loudnorm=I=-23:LRA=11:tp=-1.5 を一発、frame は完全保持で audio
+        # だけ broadcast 基準 (-23 LUFS) に揃える。
         intermediate = work / "concat_pre_loudnorm.mp4"
         run([
             "ffmpeg", "-y", "-f", "concat", "-safe", "0",

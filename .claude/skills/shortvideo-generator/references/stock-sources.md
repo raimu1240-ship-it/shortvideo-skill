@@ -22,7 +22,7 @@ bg_query で Pexels が hit しない / 海外混入率が高い / 同じ素材�
 - 直 mp4 URL pattern: `https://videos.pexels.com/video-files/<id>/<file>_<W>_<H>_<fps>fps.mp4`
 - 抽出: `python3 scripts/fetch_pexels_id.py <video_id_1> <video_id_2> ... --json-list`
   - 内部で Cloudflare bypass headers + URL filter (`videos.pexels.com/video-files/<page_id>/...`) で 9:16 縦動画優先抽出
-  - Phase 4.D.0 で 8/8 success 実証
+  - 動作確認済み: 8/8 成功
 
 ## Mixkit 詳細
 
@@ -37,12 +37,12 @@ Mixkit は **HTML 静的に直リンク埋め込み**なので urllib + 正規�
   countryside autumn」「japan ryokan interior」) で Mixkit のほうが質の高い
   日本ロケが取れることがある
 
-fetch_mixkit_id.py 実装 (Phase 5.5 完了):
+fetch_mixkit_id.py 実装:
 1. 検索ページ HTML → 個別 video page URL リスト (slug-id pattern)
 2. 個別 page HTML → 直 mp4 URL (`assets.mixkit.co/videos/<id>/<id>-<height>.mp4`)
 3. 720p を best として返す (Mixkit asset の通常 max)
 
-実走仕様:
+仕様:
 - query は space → hyphen 連結 (例: "tokyo street" → "tokyo-street")
 - Mixkit ライブラリに該当カテゴリが無い query は 0 件で返る (例: "japan ryokan")
 - video page の `<id>` 一致で関連動画 URL を除外
@@ -53,10 +53,10 @@ fetch_mixkit_id.py 実装 (Phase 5.5 完了):
 - **Pexels で 0 件 hit** or **海外混入率が高い**: Mixkit を試す
 - **niche / 高品質**: Pixabay / Coverr / Videvo を WebFetch で手動探索
 
-## Phase 4.D.1 V09 学習との関連
+## V09 グリッド検出観点との関連
 
 V09 (irasutoya grid contact-sheet) と同じ「fetch 段の query 設計と
 実 fetch 結果のズレ」が bg 側にも存在。Pexels で hit しない時に
 Mixkit / Pixabay を順に試して fallback する責務は orchestrator
 (`/shortvideo-loop`) に持たせる方が clean。fetch_pexels_id.py が
-0 件返したら fetch_mixkit_id.py を試す chain は Phase 4.D.3 で実装。
+0 件返したら fetch_mixkit_id.py を試す chain は今後実装予定。

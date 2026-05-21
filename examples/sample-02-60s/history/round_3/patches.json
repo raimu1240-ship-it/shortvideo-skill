@@ -1,5 +1,0 @@
-[
-  {"patch_type":"replace_bg","segment":"s10","new_query":"tokyo park bench afternoon"},
-  {"patch_type":"replace_bg","segment":"s6","new_query":"tokyo office interior afternoon"},
-  {"patch_type":"set_field","path":"acceptance_criteria.loudnorm_target_i","value":-23.0}
-]

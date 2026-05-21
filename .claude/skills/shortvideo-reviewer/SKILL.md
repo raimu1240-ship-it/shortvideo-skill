@@ -17,8 +17,8 @@ You are running in a forked subagent context with no memory of how the video was
 - `projects/$ARGUMENTS/output.mp4`
 - `projects/$ARGUMENTS/input.json` (read `acceptance_criteria` as the sprint contract)
 - `projects/$ARGUMENTS/ffprobe_quality.json` (mechanical metrics)
-- `examples/sample-01-10s/review_report.md` (few-shot calibration — read once)
-- `examples/sample-03-60s-pass/review_report.md` (human-passed 60s exemplar; Phase 4.F human gate verdict=pass)
+- `examples/sample-01-10s/review_report.md` (参考事例: reviewer が判定基準を学ぶ材料、一度だけ読む)
+- `examples/sample-03-60s-pass/review_report.md` (人間レビュー pass 済みの 60 秒見本)
 - `examples/sample-01-30s/review_report.md` if it exists (additional calibration)
 
 ## Steps

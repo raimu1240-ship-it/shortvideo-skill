@@ -58,5 +58,5 @@
       "direct_sales_caption"
     ]
   },
-  "notes": "2026-05-20 session で実際に作った 10s mock。reviewer の few-shot calibration 教材として保管。v2 段階では s2 の bg と illust に問題あり (review_report.md 参照)"
+  "notes": "10 秒の動作確認サンプル。reviewer の参考事例として保管。s2 の bg と illust に問題あり (review_report.md 参照) — 初期動作確認用なので不問"
 }

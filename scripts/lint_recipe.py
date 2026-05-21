@@ -129,10 +129,10 @@ def check(data: dict) -> tuple[list[str], list[str]]:
             warns.append(f"[9] overlay label {label!r} duplicated in caption in {seg['id']}")
 
     # V09. illust_query が grid-likely query かどうかの先制 warn
-    # justification: Phase 4.B.1 round_2 で「考える 男性」query が
-    # 「グラフといろいろな表情の男性」grid PNG を返した実観測あり。
-    # fetch_irasutoya_id.py の pick_best が grid を deprioritize するが、
-    # query 自体が grid を誘発する語の場合は planner 段で書き換えるべき。
+    # justification: 「考える 男性」のような query が「グラフといろいろな
+    # 表情の男性」grid PNG を返した実観測あり。fetch_irasutoya_id.py の
+    # pick_best が grid を deprioritize するが、query 自体が grid を誘発
+    # する語の場合は planner 段で書き換えるべき。
     V09_GRID_HINT_WORDS = ("いろいろ", "色々", "セット", "一覧", "種類", "5段階", "表情")
     for seg in data.get("scenario", {}).get("segments", []):
         iq = seg.get("illust_query", "") or ""

@@ -1,6 +1,6 @@
 # Review Report — sample-01-10s
 
-This report is a **few-shot calibration example** for the `shortvideo-reviewer` agent. It mirrors the format the reviewer must emit and shows what severity level (blocker / warning / info) maps to which observation.
+このレポートは `shortvideo-reviewer` のための**参考事例**。reviewer が出力すべきフォーマットの見本、および各 severity (blocker / warning / info) と観察事項の対応例を示す。
 
 ## Summary
 blocker=1 / warning=2 / info=1
@@ -23,9 +23,9 @@ blocker=1 / warning=2 / info=1
 - patch: {"patch_type":"replace_illust","segment":"s2","new_query":"スーツ 男性 微笑む"}
 
 ### T03 sub_delay 未活用 (全シーン)
-- 観測: caption_sub が input.json に定義されていない (sub caption 無し構成)。Phase 0 では許容範囲だが、補足情報を時間差で出す本来の演出効果が得られていない。
+- 観測: caption_sub が input.json に定義されていない (sub caption 無し構成)。初期動作確認用としては許容範囲だが、補足情報を時間差で出す本来の演出効果が得られていない。
 - fix 1: 各シーンに 1 行サブを追加 + `sub_delay: 2.5` を設定
-- fix 2: Phase 1 で `sub_delay` を必須化するか検討
+- fix 2: `sub_delay` を必須化するか今後検討
 - patch: {"patch_type":"set_field","path":"scenario.segments.0.sub_delay","value":2.5}
 
 ## Info

@@ -9,7 +9,7 @@ blocker=0 / warning=0 / info=0
 
 ## Warning
 
-なし ✓ — Phase 5.4 で render_video.py に ffmpeg loudnorm filter (`-af loudnorm=I=-23:LRA=11:tp=-1.5`) を組み込み、A01 (loudnorm 範囲外) が完全解消。ffprobe で loudnorm_I=-22.99 (target -23 ぴったり)、人間目視で音量も自然と確認 (verdict=pass)。
+なし ✓ — render_video.py に ffmpeg loudnorm filter (`-af loudnorm=I=-23:LRA=11:tp=-1.5`) を組み込み、A01 (loudnorm 範囲外) が完全解消。ffprobe で loudnorm_I=-22.99 (target -23 ぴったり)、人間目視で音量も自然と確認 (verdict=pass)。
 
 ## Info
 
@@ -23,7 +23,7 @@ blocker=0 / warning=0 / info=0
 
 ## このサンプルの位置付け
 
-**reviewer few-shot calibration として「人間目視 pass 済みの 60s 例」**:
+**reviewer 用の参考事例 (人間目視 pass 済みの 60 秒見本)**:
 
 - bg = 10 seg / 8 unique src (max 重複 20%) → V07 pass
 - illust = 10 seg / 10 unique 単キャラ PNG (grid なし、ため息サラリーマン / 迷う男性 / OK 男性 等) → V08/V09 pass
@@ -31,4 +31,4 @@ blocker=0 / warning=0 / info=0
 - bg cross-segment rotation で voice 進行中も 2-3 秒で切替 → 視聴維持率対策
 - PNG `-loop 1` + chunk re-encode + cfr で overlay 暗転ゼロ → 滑らかな視聴体験
 
-**HUMAN_REVIEW.md verdict: pass** (project owner / 2026-05-21)。Phase 4.F human gate を通過した実例。新規 project の reviewer はこの review_report.md を few-shot として読んでから 27+H rubric を適用すること。
+**HUMAN_REVIEW.md verdict: pass** (project owner / 2026-05-21)。人間レビュー gate を通過した実例。新規 project の reviewer はこの review_report.md を参考事例として読んでから 27+H rubric を適用すること。

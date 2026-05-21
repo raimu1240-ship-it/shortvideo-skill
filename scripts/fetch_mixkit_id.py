@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Mixkit free stock video から直 mp4 URL を確定抽出する。
 
-Phase 5.5 で追加。Pexels が 0 hit / Cloudflare blocked / 海外混入過多
-の時に fallback として使う (stock-sources.md 参照)。
+Pexels が 0 hit / Cloudflare blocked / 海外混入過多の時に fallback
+として使う (詳細は stock-sources.md 参照)。
 
 Mixkit は Pexels と違って HTML 静的にビデオ URL を埋め込んでいる
 ため、urllib + 正規表現で確実に抽出できる (Cloudflare BOT 対策なし)。
@@ -50,7 +50,7 @@ def _get(url: str) -> str:
 def search_videos(query: str, max_results: int = 5) -> list[dict[str, str]]:
     """Mixkit 検索ページ → video page URL のリスト (slug + id)。
 
-    query は space → hyphen 連結が必要 (Mixkit URL 仕様、Phase 5.5 実走で確認)。
+    query は space → hyphen 連結が必要 (Mixkit URL 仕様、実機検証で確認)。
     URL-encode ではなく lowercase + hyphen にする。
     """
     q = "-".join(query.lower().split())

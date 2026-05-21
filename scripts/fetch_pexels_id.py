@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Pexels 個別 video page から直 mp4 URL を確定抽出する。
 
-Phase 4.C.1 で追加。fetch_pexels.py が「URL を引数」設計なので、
-URL 抽出の責務をこの script に分離。WebFetch 経由は HTML→summary
-変換で 50% 取りこぼしが出た (Phase 4.B.1 実走で実測) ため、
-urllib + 正規表現で page HTML を直接 grep する確定経路にした。
+fetch_pexels.py が「URL を引数」設計なので、URL 抽出の責務をこの
+script に分離している。WebFetch 経由は HTML → summary 変換で
+50% 取りこぼしが出たため、urllib + 正規表現で page HTML を直接
+grep する確定経路にしてある。
 
 Usage:
   python3 fetch_pexels_id.py <video_id> [--prefer vertical|landscape]
@@ -20,7 +20,7 @@ import urllib.request
 from typing import Any
 
 # Pexels の新しい video ID は Cloudflare BOT 対策で 403 を返すため、
-# 正規ブラウザのフルヘッダ一式を送る (Phase 4.C.1 実走で確認)。
+# 正規ブラウザのフルヘッダ一式を送る (実機検証で確認)。
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",

@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """ナレーション生成。ELEVENLABS_API_KEY が .env にあれば ElevenLabs、
-無ければ macOS `say -v Otoya` にフォールバック。出力は mp3 (44.1kHz, mono)。
+無ければ OS 内蔵 TTS にフォールバック。出力は mp3 (44.1kHz, mono)。
+
+OS 内蔵 TTS のフォールバック先:
+  - macOS  : say -v Otoya
+  - Windows: PowerShell の System.Speech.Synthesizer (Microsoft Haruka 等)
+  - Linux  : 対応無し (ElevenLabs API キー必須)
 
 Usage: python3 tts_elevenlabs.py <text_file_or_inline> <output_mp3>
        python3 tts_elevenlabs.py --text "ナレーション本文" out.mp3
@@ -8,6 +13,7 @@ Usage: python3 tts_elevenlabs.py <text_file_or_inline> <output_mp3>
 import argparse
 import json
 import os
+import platform
 import subprocess
 import sys
 import urllib.error
@@ -36,18 +42,57 @@ def load_env(env_path: Path) -> dict:
 
 
 def tts_say(text: str, out_path: Path) -> None:
-    """macOS `say` で aiff → ffmpeg で mp3 化。"""
-    aiff = out_path.with_suffix(".aiff")
-    subprocess.run(
-        ["say", "-v", "Otoya", "-r", "180", "-o", str(aiff), text],
-        check=True,
+    """OS 内蔵 TTS にフォールバック。
+
+    macOS : `say -v Otoya` で aiff → ffmpeg で mp3 化
+    Windows: PowerShell の System.Speech.Synthesizer で wav → ffmpeg で mp3 化
+    Linux  : 対応無し (RuntimeError)
+    """
+    sys_name = platform.system()
+
+    if sys_name == "Darwin":
+        aiff = out_path.with_suffix(".aiff")
+        subprocess.run(
+            ["say", "-v", "Otoya", "-r", "180", "-o", str(aiff), text],
+            check=True,
+        )
+        subprocess.run(
+            ["ffmpeg", "-y", "-i", str(aiff), "-ar", "44100", "-ac", "1",
+             "-codec:a", "libmp3lame", "-b:a", "192k", str(out_path)],
+            check=True, stderr=subprocess.DEVNULL,
+        )
+        aiff.unlink(missing_ok=True)
+        return
+
+    if sys_name == "Windows":
+        wav = out_path.with_suffix(".wav")
+        # PowerShell の System.Speech.Synthesizer で wav 生成。
+        # text は JSON エスケープして PowerShell の文字列リテラルに渡す
+        # (改行・引用符が混じっても安全)。
+        text_lit = json.dumps(text, ensure_ascii=False)
+        wav_lit = str(wav).replace("'", "''")
+        ps = (
+            "Add-Type -AssemblyName System.Speech;"
+            "$s = New-Object System.Speech.Synthesis.SpeechSynthesizer;"
+            f"$s.SetOutputToWaveFile('{wav_lit}');"
+            f"$s.Speak({text_lit});"
+            "$s.Dispose()"
+        )
+        subprocess.run(
+            ["powershell", "-NoProfile", "-Command", ps],
+            check=True,
+        )
+        subprocess.run(
+            ["ffmpeg", "-y", "-i", str(wav), "-ar", "44100", "-ac", "1",
+             "-codec:a", "libmp3lame", "-b:a", "192k", str(out_path)],
+            check=True, stderr=subprocess.DEVNULL,
+        )
+        wav.unlink(missing_ok=True)
+        return
+
+    raise RuntimeError(
+        f"OS 内蔵 TTS は {sys_name} 非対応。.env に ELEVENLABS_API_KEY を設定してください。"
     )
-    subprocess.run(
-        ["ffmpeg", "-y", "-i", str(aiff), "-ar", "44100", "-ac", "1",
-         "-codec:a", "libmp3lame", "-b:a", "192k", str(out_path)],
-        check=True, stderr=subprocess.DEVNULL,
-    )
-    aiff.unlink(missing_ok=True)
 
 
 def tts_elevenlabs(text: str, out_path: Path, api_key: str, voice_id: str) -> None:

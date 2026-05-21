@@ -2,7 +2,7 @@
 """CI: baseline-sha256.txt と現在の sha256 を比較し、差分があれば warning 表示。
 
 block しない (意図的更新を妨げない) が、PR で必ず可視化する。
-公式 harness-design 原則: 評価基準自体が改変されていないかを継続監視する。
+意図: 評価基準 (lint / reviewer rubric / 参考事例) が改変されていないかを継続監視する。
 """
 import hashlib
 import sys

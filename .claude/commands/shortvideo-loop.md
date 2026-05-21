@@ -9,11 +9,11 @@ argument-hint: [project-name]
 
 End-to-end orchestrator for a single project. The user gives a project name; this command takes care of everything until `output.mp4` passes the reviewer or escalates after 3 failed rounds.
 
-## Bound autonomy (public Anthropic harness-design principle)
+## 自動修正の上限
 
-- Maximum loop count: **3**. After 3 rounds with blocker > 0, escalate to the user with the remaining blockers — do not silently keep retrying.
-- Each round writes its review report to `projects/<name>/history/round_<N>/review_report.md` so progress is auditable.
-- The user can interrupt at any point; resume from the last successful round by re-running this command.
+- 最大ループ数: **3**。3 ラウンド回しても blocker > 0 なら、残った blocker を提示してユーザーにエスカレーション。黙って延々と回し続けない
+- 各ラウンドのレビュー結果は `projects/<name>/history/round_<N>/review_report.md` に保存される (後から見返せる)
+- ユーザーは途中でいつでも中断 OK、再実行で前ラウンドから続行できる
 
 ## Steps
 
@@ -40,18 +40,18 @@ If it exists, skip this round and tell the user "Using existing input.json. Use 
 
 1. Run `/shortvideo-generator <name>` (the generator skill, all Stages 0-7)
 2. Spawn the reviewer subagent via the **Agent tool**.
-   - DO NOT use the Skill tool — the `shortvideo-reviewer` skill has
-     `disable-model-invocation: true` and rejects programmatic Skill calls by
-     design (E3: 生成者と評価者の物理的分離).
-   - **Preferred**: `subagent_type="shortvideo-reviewer"`. This requires
-     `.claude/agents/shortvideo-reviewer.md` to be visible to the host runtime,
-     which in practice means **`claude` was launched from this repository's
-     directory** (Claude Code reads project-level `.claude/agents/` from cwd).
-     Confirmed Phase 4.D.0.b: a Personal-scope symlink at
-     `~/.claude/agents/shortvideo-reviewer.md` does NOT make the agent
-     discoverable when cwd is elsewhere.
-   - **Fallback (if `Agent type 'shortvideo-reviewer' not found`)**:
-     `subagent_type="general-purpose"` with this prompt body —
+   - Skill ツールは使わない — `shortvideo-reviewer` skill は
+     `disable-model-invocation: true` で programmatic な呼び出しを意図的に
+     拒否している (生成者と評価者を別 context で物理的に分離するため)
+   - **推奨**: `subagent_type="shortvideo-reviewer"`。これは
+     `.claude/agents/shortvideo-reviewer.md` がランタイムから見える状態が必要、
+     具体的には **`claude` がこのリポジトリのディレクトリで起動されていること**
+     (Claude Code は project-level `.claude/agents/` を cwd から読む)。
+     実機検証で確認済み: `~/.claude/agents/shortvideo-reviewer.md` の
+     Personal-scope symlink だけでは、cwd が別ディレクトリの時に reviewer
+     を見つけられない
+   - **フォールバック (`Agent type 'shortvideo-reviewer' not found` の時)**:
+     `subagent_type="general-purpose"` で以下の prompt を渡す —
      "You are the shortvideo-reviewer subagent. Read the agent spec at
      `.claude/agents/shortvideo-reviewer.md` first, then execute the steps in
      `.claude/skills/shortvideo-reviewer/SKILL.md` for project `<name>`.
@@ -59,26 +59,26 @@ If it exists, skip this round and tell the user "Using existing input.json. Use 
      `projects/<name>/review_report.md` (Markdown with `blocker=N / warning=M
      / info=K` summary line + sections + `## Patches (JSON array)`) and
      `projects/<name>/patches.json` (JSON array of patches)."
-     The fallback loses E3 strict purity (no `context: fork`) but keeps the
-     loop runnable. Surface a warning in the user reply when fallback is used.
+     フォールバックは `context: fork` の独立性を失う (reviewer が orchestrator
+     と context を共有してしまう) が、ループは継続できる。フォールバック使用時
+     はユーザーへの返信で warning を出す
 3. Read `projects/<name>/review_report.md` (the reviewer's summary)
 4. Copy the report to `projects/<name>/history/round_<N>/review_report.md`
 
 ### Patch decision
 
-- **blocker == 0** AND warning ≤ 3: proceed to **Human review gate** (next section). DO NOT declare "Phase complete" until the human gate passes.
+- **blocker == 0** AND warning ≤ 3: 次の **人間レビュー gate** へ。人間 gate を通るまで「完了」と言わない。
 - **blocker == 0** AND warning > 3: ask the user "warning が N 件残っています。このまま採用するか、patch を当てて再ループしますか？" — wait for explicit answer.
 - **blocker > 0** AND round < 3: apply patches from `projects/<name>/patches.json` to `input.json`, then loop to next round.
 - **blocker > 0** AND round == 3: escalate.
 
-### Human review gate (Required final step — never skip)
+### 人間レビュー gate (省略不可、最後の必須ステップ)
 
-Anthropic harness-design principle: *verifier が generator と同じ盲点を共有する*
-(agent-essence.md V-2 / C-3 迎合性). The reviewer subagent is still a Claude
-model; it can rubber-stamp the orchestrator's output without surfacing
-problems a human would catch immediately (e.g. caption tone feels off,
-illust feels disconnected from voice, narrative pacing is dead, etc.).
-**Pass through this gate before reporting Phase / project completion.**
+reviewer subagent も結局は Claude の model なので、generator と同じ盲点
+を共有する (字幕のトーンが微妙にズレている、illust と voice の温度感が
+合ってない、ナレーションのテンポが死んでいる、等)。人間が見れば一発で
+気付くことを AI が見落として「pass」を返す現象を防ぐため、最終 gate を
+人間に持たせる。**この gate を通過するまで「完了」を宣言しない。**
 
 1. Open the output for human viewing:
    ```bash
@@ -96,15 +96,11 @@ illust feels disconnected from voice, narrative pacing is dead, etc.).
    timestamp: <ISO>
    notes: <user's fail reason or "OK">
    ```
-5. If `fail`, **treat the user's notes as a new patches.json entry** and
-   loop back to Round N+1 even if reviewer said blocker=0. The human verdict
-   overrides the AI verdict. Bound autonomy (max 3 rounds) still applies —
-   if 3 human-review rounds also fail, escalate.
-6. Only after `verdict: pass` may you report completion.
-
-This is the gate that turned Phase 4 from "AI 評価 100%" into actual
-delivery. Skipping it is the same failure mode as Phase 4.B.3
-over-claiming E3 purity without runtime verification.
+5. `fail` の場合、**ユーザーの notes を patches.json の新しい entry として扱い**、
+   reviewer が blocker=0 と言っていても Round N+1 に戻る。人間の判定が
+   AI の判定を上書きする。上限 (最大 3 ラウンド) は引き続き適用 —
+   人間レビューで 3 ラウンド全部 fail ならエスカレーション
+6. `verdict: pass` が出てはじめて完了報告できる
 
 ### Applying patches
 
@@ -150,7 +146,10 @@ projects/<name>/history/ に各ラウンドのレポートを保存。次の判�
 
 Wait for the user's choice. Do not proceed.
 
-## Convergence safeguards (Anthropic harness-design principle)
+## 収束しないループの検出
 
-- If the same patch_type is applied to the same segment in two consecutive rounds without resolving the blocker, surface a warning and stop the loop early. This indicates the generator cannot address the feedback.
-- If the reviewer's blocker count *increases* between rounds, halt immediately and ask the user — the patch is making things worse.
+- 同じ patch_type が同じ segment に 2 ラウンド連続で当てられて blocker
+  が解消しない場合、warning を出してループを早期停止する (generator が
+  フィードバックに対応できていない兆候)
+- ラウンド間で reviewer の blocker 数が *増加* した場合、即停止して
+  ユーザーに確認 — パッチが状況を悪化させている

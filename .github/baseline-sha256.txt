@@ -1,19 +1,19 @@
 # shortvideo-skill — 「ものさし」ファイル sha256 baseline
-# Anthropic harness-design 原則: 評価基準自体が改変されていないことを保証する
-# (報酬ハッキング対策: 評価ツール / 観点 rubric / few-shot example の改変を可視化)
+# 評価基準 (lint / reviewer rubric / 参考事例) が改変されていないかを CI で
+# 可視化するためのハッシュリスト。
 #
 # このファイルが変更された PR は人間が必ず眼で確認する。
 # CI は差分があれば warning として可視化、block しない (意図的更新を妨げないため)。
 #
 # 更新方法: ローカルで shasum -a 256 <files> を再実行し、このファイル全文を貼り替える
-c87a77143fb054456417b8b44482c0d044cea10ce9e50242e28f1256aa69370c  scripts/lint_recipe.py
+0120d9de9814ce2f343522e9966238a2bbda1d01897c1f12aa3d4cac6019f95d  scripts/lint_recipe.py
 183d90b2a547fce12c690cfdd11f276503425312b477c4f6f9d9d361b784a45b  scripts/ffprobe_quality.py
-a6c69c732bd6807cc905fc7dd512636a5328ea859bce87fe893c937dbe0d792b  scripts/render_video.py
+82496863cbe2d6a1d087efa567eed25aaa15be03acb3d001abe54fe80ee99282  scripts/render_video.py
 79d72c1f30a77c29033d1979a46bd321ecc453bf1174f1e59ff1788ccde24ac9  scripts/make_captions.py
-561dbe2093eabe204967486c711a2ed01b09b67a24c07f2c6ced133cc00f8557  scripts/fetch_pexels_id.py
-7dc0b1fba0e166b0387c1c160d27ee99613916a39254d966f2ff310f3d9cc9ac  scripts/fetch_irasutoya_id.py
-d57db7ab367771b793c90a932a0a08746336c37cf7df5f54bd9ef7c76debd0fb  scripts/fetch_mixkit_id.py
-69faf355ab071280140950d46c53fc643742307e52171dc99d9bb52df0507015  .claude/agents/shortvideo-reviewer.md
-d43b3ab97b7d8a012e8c6158c895575bb567090e847e81df8b19fa5b5efe3213  examples/sample-01-10s/review_report.md
+7406b92585f25c7c2782496c8193e8acb087e08ba4c2467f68fe55c295ba5cf1  scripts/fetch_pexels_id.py
+b32e9071fb219099f22a7dae0dd7ac902007d14897eb33bd8e8caa7e0cfa0417  scripts/fetch_irasutoya_id.py
+b7cbff8a2c2712184761c02af20f50fe635ace8c07d74c0d847de64103392acb  scripts/fetch_mixkit_id.py
+8f63cc66568d824d045ecab8fb1561ce5e77ef78284a8af50410e1dd8d5b9f2e  .claude/agents/shortvideo-reviewer.md
+8a278acacb55f551edbbd8fe41d7d1a6e5f173f5f44b4c266ca3a67d400c025d  examples/sample-01-10s/review_report.md
 90efba4674fae7909320f1a43ab665cfd8f4685fdc852e9314b19705591d385f  examples/sample-test/review_report.md
 4407c5cfe0a2af9fd540f81fa9cee6bf0c07afc8e663bab9665db576769d600e  examples/sample-02-60s/review_report.md

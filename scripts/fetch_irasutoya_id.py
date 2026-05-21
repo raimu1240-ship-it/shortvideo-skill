@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """いらすとや Atom feed (JSON) から検索して s800 PNG URL を返す。
 
-Phase 4.C.1 で追加。fetch_irasutoya.py が「URL を引数」設計なので、
-検索 → URL 抽出の責務をこの script に分離。
+fetch_irasutoya.py が「URL を引数」設計なので、検索 → URL 抽出の責務を
+この script に分離している。
 
 Usage:
   python3 fetch_irasutoya_id.py "<query>" [--max 6]
@@ -43,10 +43,9 @@ def search(query: str, max_results: int = 6) -> list[dict[str, Any]]:
 
 
 # V09 grid filter: title にこれらが含まれる entry は「複数キャラ contact sheet」の
-# 可能性が高く、render すると 1 illust 内に 4-12 顔が並ぶ blocker を生む
-# (Phase 4.B.1 round_2 で実観測、learning-loop.md フローで rubric V09 昇格)
-# Phase 4.F.bug1 追加: 「無気力」「車を運転している」(動詞 + ing 形) は 5 表情・12 表情
-# grid の典型タイトル、ユーザー目視 fail で実害確認
+# 可能性が高く、render すると 1 illust 内に 4-12 顔が並ぶ blocker を生む。
+# 「無気力」「車を運転している」(動詞 + ing 形) は 5 表情・12 表情 grid の
+# 典型タイトル、人間目視で実害を確認したため除外対象に含める。
 GRID_KEYWORDS = (
     "いろいろな", "セット", "一覧", "種類", "5段階", "表情の", "色々な",
     "無気力",                # 「無気力な人のイラスト（中年男性）」= 5 表情 grid

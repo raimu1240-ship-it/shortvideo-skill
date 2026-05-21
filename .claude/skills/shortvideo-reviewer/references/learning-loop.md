@@ -3,9 +3,7 @@
 Reviewer が動画を見て「これは現行 rubric に該当しないが視聴者には致命的」と
 判断した観察事項を、再現可能な観点として rubric に組み込むための手順。
 
-公式 Anthropic harness-design 原則「Every component in a harness encodes an
-assumption ... worth stress testing」に従い、観察を観点化することで Verifier
-の盲点を継続的に縮める。
+観察を観点化することで、reviewer の盲点を継続的に縮めるためのフロー。
 
 ## 何を昇格対象とするか
 
@@ -39,9 +37,9 @@ reviewer subagent が出力する `review_report.md` の `## Info` セクショ�
 1 件だけの観察は「単発の特殊事例」かもしれない。最低 2 件、できれば 3 件の
 別 sample で同じ root cause を観測できたら昇格候補にする。
 
-(早期に観点化すると Rubber stamp 化のリスク = 大量の観点が並んで reviewer が
-ほぼ全部「pass」を返す状態に陥る。Anthropic 公式記事の Generator-Verifier
-落とし穴項参照。)
+(早期に観点化すると「ハンコ押し」化のリスクがある = 大量の観点が並んで
+reviewer がほぼ全部「pass」を返す状態に陥る。観点数が増えると一つ一つの
+判定が雑になりやすいので、十分な再現性を確認してから昇格させる。)
 
 ### Step 3 — 観点 ID と分類を決める
 

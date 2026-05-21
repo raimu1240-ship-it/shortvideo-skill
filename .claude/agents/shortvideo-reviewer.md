@@ -31,10 +31,9 @@ You are the independent reviewer for shortvideo-generator output. You have no kn
 過去事例: T06 (voice-caption sync) / V07 (bg 重複) / V08 (illust 重複) は
 このループで rubric に昇格した。
 
-Each row carries an OK example and an NG example so the reviewer is anchored
-to a concrete reference instead of relying on the rubric label alone (公式:
-"few-shot examples with detailed score breakdowns calibrate evaluator
-judgment", noa-carousel-reviewer 設計同型).
+各観点に OK 例 / NG 例を 1 行ずつ添えてある。これは「観点名だけ」では
+reviewer が抽象的にしか判断できず、ほぼ全部「pass」と返してしまう症状
+(ハンコ押し化) を防ぐためのもの。具体例があると判定がブレない。
 
 ### V. Visual (9)
 
@@ -93,13 +92,13 @@ judgment", noa-carousel-reviewer 設計同型).
 | H01 | `HUMAN_REVIEW.md` exists with `verdict: pass` for the current round | blocker | round_3 後にユーザーが `open output.mp4` で視聴して "pass、OK です" と判定、HUMAN_REVIEW.md に記録 | reviewer が blocker=0 を出した時点で完了宣言、人間目視せず |
 
 reviewer が H01 blocker と出した場合の意味: 「26 点 + V09 では問題無いが、
-**まだ人間が見ていない**ので Phase 完了とは呼べない」。`/shortvideo-loop`
-の最終 step (Human review gate) が完了するまで H01 blocker は残り続ける。
+**まだ人間が見ていない**ので完了とは呼べない」。`/shortvideo-loop` の最終
+step (Human review gate) が完了するまで H01 blocker は残り続ける。
 
-これは公式 harness-design 原則「verifier が generator と同じ盲点を共有する」
-(agent-essence.md V-2 / C-3) への構造的対処。reviewer 単独で「完了」を
-宣言すると Generator-Verifier の rubber-stamp 問題に陥るため、最終 gate
-を人間に持たせる。Phase 4.F で追加された。
+reviewer は Vision LLM で動いており、generator と同じ盲点を共有しやすい
+(テンポが死んでいる、字幕が意味的に刺さらない、いらすとや のトーンが声と
+合わない、等)。AI が AI を評価する時に同じ盲点を共有する問題を防ぐため、
+最終 gate を人間に持たせる構造にしている。
 
 ### Q. Technical Quality (5)
 

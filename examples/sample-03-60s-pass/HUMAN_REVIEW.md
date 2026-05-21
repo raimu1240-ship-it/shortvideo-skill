@@ -1,6 +1,6 @@
 # Human review — sample-03-60s-pass (frozen)
 
-**Round**: final (Phase 4.F.bug round_4 v3)
+**Round**: final (最終ラウンド、人間レビューで pass 判定)
 **Reviewer (AI)**: blocker=0 / warning=1 (A01 LUFS のみ) / info=0
 **Output**: `examples/sample-03-60s-pass/output.mp4` (20.7 MB, 56.19s)
 
@@ -13,6 +13,6 @@
 
 ## このファイルの位置付け
 
-**frozen calibration material** として `examples/sample-03-60s-pass/` を構成する 1 ファイル。reviewer subagent が新規 project を grade する際の few-shot として、「人間目視 pass 済みの 60s 例 = HUMAN_REVIEW.md verdict: pass を持つ動画はこういう品質」を学ぶために読む。
+**判定基準の参考事例 (frozen)** として `examples/sample-03-60s-pass/` を構成する 1 ファイル。reviewer subagent が新規 project を grade する際の参考事例として、「人間目視 pass 済みの 60 秒見本 = HUMAN_REVIEW.md verdict: pass を持つ動画はこういう品質」を学ぶために読む。
 
 H01 (`HUMAN_REVIEW.md exists with verdict: pass`) は人間目視を通っていない動画には付与されない hard gate。このファイルがあるサンプルは「人間が見て配信 OK と判定した動画」の手本として扱う。

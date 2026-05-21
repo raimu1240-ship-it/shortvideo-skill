@@ -1,5 +1,5 @@
 {
-  "_comment": "Trust boundary for shortvideo-skill. Anthropic harness-design principle: 'evaluators must be protected from the evaluated'.",
+  "_comment": "shortvideo-skill の信頼境界設定。reviewer / 観点 rubric / 参考事例ファイルを reviewer subagent が改変できないよう deny する (評価対象に評価基準を書き換えられるのを防ぐ)。意図的に変更したい時はユーザーがこのファイルを直接編集する。",
   "permissions": {
     "deny": [
       "Edit(.claude/agents/**)",

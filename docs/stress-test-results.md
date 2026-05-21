@@ -1,9 +1,9 @@
-# Stress Test Results — Phase 3.A
+# ストレステスト結果
 
-公式 Anthropic harness-design 原則「Every component in a harness encodes an
-assumption ... worth stress testing」に従い、planner / reviewer / loop の各
-コンポーネントを 1 つずつ抜いた状態の品質を測定。それぞれの存在価値を数値と
-質的観察で裏取りし、将来モデル進化で不要化したかの再評価ベースラインを残す。
+planner / reviewer / loop の各コンポーネントを 1 つずつ抜いた状態で動かして
+品質を測定したログ。それぞれの存在価値を数値と質的観察で裏取りし、将来
+モデル進化で「このコンポーネントは不要になったのでは」を再評価する時の
+ベースラインとして残す。
 
 測定対象: examples/ 配下の 3 calibration material
 - sample-01-10s (10s, 2 seg, T06 一致型) — pass の手本
@@ -40,8 +40,8 @@ blocker (bg 50%) と V08 blocker (illust 60%) を出した。
   blocker + V08 blocker + reviewer の指摘 26 patches
 
 **結論**: planner は **長尺 (4 seg 超) で必須**。短尺 (1-3 seg) は手書きで
-も成立。Phase 3 以降のモデル進化で「planner なしでも generator/reviewer が
-分散を自動修正できる」状態になれば planner を再評価可能。
+も成立。今後のモデル進化で「planner なしでも generator/reviewer が分散を
+自動修正できる」状態になれば planner を再評価可能。
 
 ## Ablation B — reviewer 抜き
 
@@ -61,8 +61,8 @@ V01 (海外素材) と P02 (illust 意味論ミスマッチ) は本番納品で�
 
 **結論**: reviewer は **Vision LLM 観点 (V01/V04/P01/P02/P03) の検出に必須**。
 mechanical 観点 (字数 / overlap / 解像度) は lint で取れるので二重判定にしな
-い責務分離が正しい (公式記事「verifier は generator と同じ盲点を共有しない
-よう別軸の criteria が必要」)。
+い責務分離が正しい (lint と reviewer で別軸の判定基準を持つことで、お互いの
+盲点を補完する)。
 
 ## Ablation C — loop 抜き
 
@@ -111,5 +111,5 @@ mechanical 観点 (字数 / overlap / 解像度) は lint で取れるので二�
 | sample-02-60s lint warns | 13 | 同上 |
 | CI run time | 37s | GitHub Actions run 26195124553 |
 
-次回 stress test (例: Phase 4 で planner/reviewer モデル変更時) は、これらの
-数値と比較して回帰 / 改善を測定する。
+次回 stress test (planner/reviewer モデル変更時など) は、これらの数値と
+比較して回帰 / 改善を測定する。
