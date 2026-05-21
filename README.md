@@ -29,7 +29,15 @@ cp .env.example .env   # optional: set ELEVENLABS_API_KEY for ElevenLabs narrati
 
 ## Usage
 
-In Claude Code:
+**Launch Claude Code from inside this repository** so the project-level
+`.claude/agents/shortvideo-reviewer.md` is discovered:
+
+```bash
+cd ~/code/shortvideo-skill
+claude
+```
+
+Then in the session:
 
 ```
 /shortvideo-loop my-first-project
@@ -38,6 +46,21 @@ In Claude Code:
 The orchestrator will plan, generate, review, and self-correct up to 3 rounds. Output lands at `projects/my-first-project/output.mp4`.
 
 For manual control, run the stages separately: `/shortvideo-planner`, `/shortvideo-generator`, then invoke `shortvideo-reviewer` as a skill.
+
+### Why the cwd matters (reviewer recognition)
+
+Claude Code discovers custom subagents from the **project-level**
+`.claude/agents/` directory (relative to cwd at launch). Phase 4.D.0.b
+confirmed empirically that the Personal-scope symlink at
+`~/.claude/agents/shortvideo-reviewer.md` that `install.sh` creates is
+**not** sufficient on its own: when `claude` is launched from a different
+directory, the host runtime returns
+`Agent type 'shortvideo-reviewer' not found`.
+
+If you must launch Claude Code from another directory, `/shortvideo-loop`
+auto-falls back to `subagent_type="general-purpose"` with a prompt body
+that loads the reviewer spec. This works but loses `context: fork`
+strict purity (the reviewer shares one context with the orchestrator).
 
 ## Requirements
 

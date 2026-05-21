@@ -39,21 +39,28 @@ If it exists, skip this round and tell the user "Using existing input.json. Use 
 ### Round N — Generate + Review (N = 1, 2, 3)
 
 1. Run `/shortvideo-generator <name>` (the generator skill, all Stages 0-7)
-2. Spawn the reviewer subagent via the **Agent tool** with
-   `subagent_type="shortvideo-reviewer"`. The custom agent type is defined at
-   `.claude/agents/shortvideo-reviewer.md` and exposed by the host runtime when
-   the project is opened with this repository's `.claude/` directory loaded
-   (default after `install.sh`).
+2. Spawn the reviewer subagent via the **Agent tool**.
    - DO NOT use the Skill tool — the `shortvideo-reviewer` skill has
      `disable-model-invocation: true` and rejects programmatic Skill calls by
      design (E3: 生成者と評価者の物理的分離).
-   - DO NOT fall back to `subagent_type="general-purpose"`. The custom agent is
-     required so the reviewer runs in a forked context with no memory of the
-     generator's reasoning. A general-purpose fallback re-creates the bias path
-     the fork was designed to break.
-   - If the host runtime cannot expose the custom agent type, fix install.sh /
-     the runtime before running this command — do not work around the missing
-     boundary.
+   - **Preferred**: `subagent_type="shortvideo-reviewer"`. This requires
+     `.claude/agents/shortvideo-reviewer.md` to be visible to the host runtime,
+     which in practice means **`claude` was launched from this repository's
+     directory** (Claude Code reads project-level `.claude/agents/` from cwd).
+     Confirmed Phase 4.D.0.b: a Personal-scope symlink at
+     `~/.claude/agents/shortvideo-reviewer.md` does NOT make the agent
+     discoverable when cwd is elsewhere.
+   - **Fallback (if `Agent type 'shortvideo-reviewer' not found`)**:
+     `subagent_type="general-purpose"` with this prompt body —
+     "You are the shortvideo-reviewer subagent. Read the agent spec at
+     `.claude/agents/shortvideo-reviewer.md` first, then execute the steps in
+     `.claude/skills/shortvideo-reviewer/SKILL.md` for project `<name>`.
+     Working directory: repo root. Required outputs:
+     `projects/<name>/review_report.md` (Markdown with `blocker=N / warning=M
+     / info=K` summary line + sections + `## Patches (JSON array)`) and
+     `projects/<name>/patches.json` (JSON array of patches)."
+     The fallback loses E3 strict purity (no `context: fork`) but keeps the
+     loop runnable. Surface a warning in the user reply when fallback is used.
 3. Read `projects/<name>/review_report.md` (the reviewer's summary)
 4. Copy the report to `projects/<name>/history/round_<N>/review_report.md`
 
