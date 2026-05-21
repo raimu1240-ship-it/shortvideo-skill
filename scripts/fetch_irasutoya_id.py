@@ -45,7 +45,16 @@ def search(query: str, max_results: int = 6) -> list[dict[str, Any]]:
 # V09 grid filter: title にこれらが含まれる entry は「複数キャラ contact sheet」の
 # 可能性が高く、render すると 1 illust 内に 4-12 顔が並ぶ blocker を生む
 # (Phase 4.B.1 round_2 で実観測、learning-loop.md フローで rubric V09 昇格)
-GRID_KEYWORDS = ("いろいろな", "セット", "一覧", "種類", "5段階", "表情の", "色々な")
+# Phase 4.F.bug1 追加: 「無気力」「車を運転している」(動詞 + ing 形) は 5 表情・12 表情
+# grid の典型タイトル、ユーザー目視 fail で実害確認
+GRID_KEYWORDS = (
+    "いろいろな", "セット", "一覧", "種類", "5段階", "表情の", "色々な",
+    "無気力",                # 「無気力な人のイラスト（中年男性）」= 5 表情 grid
+    "を運転している",        # 「いろいろな表情の車を運転している男性のイラスト」= 12 grid
+    "の表情",                # 「黒人男性の表情のイラスト」等の表情シート
+    "シーン",                # 「いろいろなシーンの人のイラスト」
+    "段階",                  # 「N 段階の困る表情」等
+)
 
 
 def is_grid_title(title: str) -> bool:

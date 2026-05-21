@@ -48,12 +48,21 @@ def _src_duration(path: Path) -> float:
     return float(r.stdout.strip())
 
 
-def prepare_segment(seg: dict, work_dir: Path, w: int, h: int, fps: int) -> Path:
+def prepare_segment(seg: dict, work_dir: Path, w: int, h: int, fps: int,
+                    bg_pool: list[Path] | None = None,
+                    global_chunk_offset: int = 0) -> tuple[Path, int]:
     """1 セグメント分の背景動画を fastcut (2-3 秒ごとに切替) で生成する。
-    同じ src の異なる time offset から chunk を切り出して concat することで
-    視覚的変化を出す。src が短ければ可能な範囲で offset を分散。"""
+
+    bg_pool=None (legacy): 自 seg の bg_{sid}.mp4 だけから offset を分散して chunk 化。
+    bg_pool=list(Path)   : Phase 4.F.bug2 — 全 seg の bg src pool から
+                            各 chunk で異なる src を順次 pick する。voice/caption
+                            が進行中でも 2-3 秒ごとに別動画に切り替わる
+                            (1 テロップ=1 背景の制限なし、ユーザー指示)。
+
+    Returns: (bg.mp4 path, この seg で消費した chunk 数) — caller は次 seg で
+    global_chunk_offset += 消費数 とすることでローテが進む。
+    """
     sid = seg["id"]
-    src = work_dir / "assets" / f"bg_{sid}.mp4"
     out = work_dir / "stages" / f"scene_{sid}_bg.mp4"
     out.parent.mkdir(parents=True, exist_ok=True)
     dur = float(seg["duration_sec"])
@@ -65,19 +74,29 @@ def prepare_segment(seg: dict, work_dir: Path, w: int, h: int, fps: int) -> Path
     n_chunks = max(2, round(dur / FASTCUT_CHUNK_SEC))
     chunk_dur = dur / n_chunks
 
-    # src 内の offset を均等分散。src が短ければ available=0 で全 chunk 同一 offset。
-    try:
-        src_dur = _src_duration(src)
-    except Exception:
-        src_dur = dur  # 取れなければ chunk_dur ぴったり前提
-    available = max(0.0, src_dur - chunk_dur)
-    if available <= 0.01 or n_chunks == 1:
+    if bg_pool:
+        # Phase 4.F.bug2: 各 chunk で global ローテで別 src を pick
+        # src 内 offset は 0 固定 (各 src の先頭 chunk_dur 秒を使う、複数 chunk
+        # で同 src が当たった時に時間進めるのは将来拡張)
+        chunk_srcs = [bg_pool[(global_chunk_offset + i) % len(bg_pool)]
+                      for i in range(n_chunks)]
         offsets = [0.0] * n_chunks
     else:
-        offsets = [i * (available / (n_chunks - 1)) for i in range(n_chunks)]
+        # Legacy: 自 seg の bg だけ、offset 分散
+        own_src = work_dir / "assets" / f"bg_{sid}.mp4"
+        chunk_srcs = [own_src] * n_chunks
+        try:
+            src_dur = _src_duration(own_src)
+        except Exception:
+            src_dur = dur
+        available = max(0.0, src_dur - chunk_dur)
+        if available <= 0.01 or n_chunks == 1:
+            offsets = [0.0] * n_chunks
+        else:
+            offsets = [i * (available / (n_chunks - 1)) for i in range(n_chunks)]
 
     chunk_files = []
-    for i, offset in enumerate(offsets):
+    for i, (src, offset) in enumerate(zip(chunk_srcs, offsets)):
         chunk_out = work_dir / "stages" / f"scene_{sid}_chunk{i}.mp4"
         run([
             "ffmpeg", "-y", "-ss", f"{offset:.3f}", "-i", str(src),
@@ -90,15 +109,23 @@ def prepare_segment(seg: dict, work_dir: Path, w: int, h: int, fps: int) -> Path
         chunk_files.append(chunk_out)
 
     # chunks を concat (絶対パス指定で demuxer 二重解決バグ回避)
+    # Phase 4.F.bug3 (round_4-fix): `-c copy` だと chunk 境界で DTS 不連続が
+    # 起き、overlay 段で 1 frame "暗転" → PNG (loop) が一瞬抜ける現象が出る
+    # (ユーザー目視で連続実証)。chunk concat 時に re-encode して PTS を
+    # 線形化することで境界を完全に滑らかにする。コスト: 数秒 / 10 seg。
     concat_list = work_dir / "stages" / f"scene_{sid}_concat.txt"
     concat_list.write_text(
         "\n".join(f"file '{p.resolve()}'" for p in chunk_files) + "\n"
     )
     run([
         "ffmpeg", "-y", "-f", "concat", "-safe", "0",
-        "-i", str(concat_list), "-c", "copy", str(out),
+        "-i", str(concat_list),
+        "-c:v", "libx264", "-preset", PRESET, "-crf", str(CRF),
+        "-pix_fmt", PIX_FMT, "-r", str(fps),
+        "-fps_mode", "cfr",  # constant frame rate で隙間 0
+        str(out),
     ])
-    return out
+    return out, n_chunks
 
 
 def overlay_segment(seg: dict, bg: Path, work_dir: Path, captions_dir: Path,
@@ -126,8 +153,14 @@ def overlay_segment(seg: dict, bg: Path, work_dir: Path, captions_dir: Path,
     chain_parts.append(f"{prev}[scrim]overlay=0:0[v_scrim]")
     prev = "[v_scrim]"
 
+    # Phase 4.F.bug3: PNG input は -loop 1 -t <seg_dur> を必須にする。
+    # 無いと PNG が 1 frame しか入力されず、overlay が 1 frame だけ表示で
+    # 残り時間は下レイヤー (scrim 後の bg) のみ表示される = 「テロップ消失」現象。
+    seg_dur = float(seg["duration_sec"])
+    png_input_args = ["-loop", "1", "-t", f"{seg_dur:.3f}"]
+
     if illust and illust.exists():
-        inputs += ["-i", str(illust)]
+        inputs += [*png_input_args, "-i", str(illust)]
         target_h = int(h * ILLUST_H_RATIO)
         top_y = int(h * ILLUST_TOP_Y_RATIO)
         chain_parts.append(
@@ -140,7 +173,7 @@ def overlay_segment(seg: dict, bg: Path, work_dir: Path, captions_dir: Path,
         next_idx += 1
 
     if bubble.exists():
-        inputs += ["-i", str(bubble)]
+        inputs += [*png_input_args, "-i", str(bubble)]
         # bubble は sub_delay 秒後にフェードイン (= main caption と同時表示を避ける)
         # justification: ffmpeg overlay filter は timeline 'enable' 公式サポート
         # (`ffmpeg -h filter=overlay` で "support for timeline through 'enable'")。
@@ -154,7 +187,7 @@ def overlay_segment(seg: dict, bg: Path, work_dir: Path, captions_dir: Path,
         next_idx += 1
 
     if cap_main.exists():
-        inputs += ["-i", str(cap_main)]
+        inputs += [*png_input_args, "-i", str(cap_main)]
         chain_parts.append(f"{prev}[{next_idx}:v]overlay=0:0[v_cap]")
         prev = "[v_cap]"
         next_idx += 1
@@ -208,9 +241,20 @@ def main() -> int:
               file=sys.stderr)
 
     # Stage A: 各シーンの bg fastcut + overlay
-    scene_videos = []
+    # Phase 4.F.bug2: bg_pool で cross-segment rotation を有効化、各 chunk が
+    # 別 segment の bg src を引く。voice/caption と独立して 2-3 秒で切り替わる。
+    bg_pool: list[Path] = []
     for seg in segments:
-        bg = prepare_segment(seg, work, w, h, fps)
+        p = assets_dir / f"bg_{seg['id']}.mp4"
+        if p.exists():
+            bg_pool.append(p)
+    scene_videos = []
+    global_chunk_offset = 0
+    for seg in segments:
+        bg, consumed = prepare_segment(seg, work, w, h, fps,
+                                       bg_pool=bg_pool,
+                                       global_chunk_offset=global_chunk_offset)
+        global_chunk_offset += consumed
         scene_v = overlay_segment(seg, bg, work, captions_dir, assets_dir, w, h)
         scene_videos.append(scene_v)
 

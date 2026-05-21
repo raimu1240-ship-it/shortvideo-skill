@@ -7,9 +7,13 @@
 ## Human verdict
 
 **reviewer**: project owner
-**timestamp**: <pending — ユーザー視聴判定待ち>
-**verdict**: <pending: pass | fail>
-**notes**: <ユーザー記入欄、fail 時は 1-3 行で理由>
+**timestamp**: 2026-05-21
+**verdict**: **fail**
+**notes**:
+1. illust が grid 残存 (s5「ひらめく 男性」= 車運転 12 グリッド、s8「ため息 男性」= 5 表情 grid)。reviewer は V09 PASS と判断したが、実フレーム目視で明らかに複数キャラ grid PNG。V09 機能不全 = fetch_irasutoya_id.py の GRID_KEYWORDS 漏れ (「無気力」「車を運転」等) + reviewer Vision の rubber-stamp。
+2. 背景動画が 2-3 秒で切り替わっていない。期待は「voice/caption 進行中でも 2-3 秒ごとに別 src に切り替わる (1 テロップ = 1 背景の制限なし)」、現実装は seg 境界でしか bg が変わらない (1 seg 内は同 src を fastcut しても同じ動画)。render_video.py の bg fastcut 設計がクロス segment になっていない。
+
+→ Phase 4.F.bug として round_4 で対処。
 
 ---
 
