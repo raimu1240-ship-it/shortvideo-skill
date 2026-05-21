@@ -11,7 +11,7 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-# justification: brand-name案件で観測した字数閾値。
+# justification: production usage で観測した字数閾値。
 # 8 字超え = 視認性低下 warn / 12 字超え = 1080x1920 で letterbox はみ出し error
 CAPTION_WARN_CHARS = 8
 CAPTION_ERROR_CHARS = 12

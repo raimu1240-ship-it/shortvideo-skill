@@ -92,7 +92,7 @@ illust feels disconnected from voice, narrative pacing is dead, etc.).
 4. Record the verdict to `projects/<name>/HUMAN_REVIEW.md`:
    ```markdown
    verdict: pass | fail
-   reviewer: <user name or "project owner">
+   reviewer: <your name or handle>
    timestamp: <ISO>
    notes: <user's fail reason or "OK">
    ```

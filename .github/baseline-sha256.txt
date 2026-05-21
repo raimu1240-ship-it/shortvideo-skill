@@ -6,7 +6,7 @@
 # CI は差分があれば warning として可視化、block しない (意図的更新を妨げないため)。
 #
 # 更新方法: ローカルで shasum -a 256 <files> を再実行し、このファイル全文を貼り替える
-6bae72ac5ff5e19b3866d2c334e2738b93215165a7d75d1bd9df891e3afef936  scripts/lint_recipe.py
+c87a77143fb054456417b8b44482c0d044cea10ce9e50242e28f1256aa69370c  scripts/lint_recipe.py
 183d90b2a547fce12c690cfdd11f276503425312b477c4f6f9d9d361b784a45b  scripts/ffprobe_quality.py
 85e388f60c1c00acea2c86adf3dba65a79a312af13c5b92815160085d62b995a  scripts/render_video.py
 79d72c1f30a77c29033d1979a46bd321ecc453bf1174f1e59ff1788ccde24ac9  scripts/make_captions.py
