@@ -66,10 +66,45 @@ If it exists, skip this round and tell the user "Using existing input.json. Use 
 
 ### Patch decision
 
-- **blocker == 0** AND warning ≤ 3: report success, stop. Tell the user the output.mp4 path, the blocker/warning count, and any info-level findings.
+- **blocker == 0** AND warning ≤ 3: proceed to **Human review gate** (next section). DO NOT declare "Phase complete" until the human gate passes.
 - **blocker == 0** AND warning > 3: ask the user "warning が N 件残っています。このまま採用するか、patch を当てて再ループしますか？" — wait for explicit answer.
 - **blocker > 0** AND round < 3: apply patches from `projects/<name>/patches.json` to `input.json`, then loop to next round.
 - **blocker > 0** AND round == 3: escalate.
+
+### Human review gate (Required final step — never skip)
+
+Anthropic harness-design principle: *verifier が generator と同じ盲点を共有する*
+(agent-essence.md V-2 / C-3 迎合性). The reviewer subagent is still a Claude
+model; it can rubber-stamp the orchestrator's output without surfacing
+problems a human would catch immediately (e.g. caption tone feels off,
+illust feels disconnected from voice, narrative pacing is dead, etc.).
+**Pass through this gate before reporting Phase / project completion.**
+
+1. Open the output for human viewing:
+   ```bash
+   open projects/<name>/output.mp4
+   ```
+2. Present the user with a 3-line summary:
+   - `output.mp4 を再生しました (duration=Ns)`
+   - `Reviewer 評価: blocker=0 / warning=N`
+   - `視聴して pass か fail を判定してください。fail の場合は理由 1-3 行で。`
+3. Wait for explicit `pass` / `fail` reply (no auto-pass on silence).
+4. Record the verdict to `projects/<name>/HUMAN_REVIEW.md`:
+   ```markdown
+   verdict: pass | fail
+   reviewer: <user name or "project owner">
+   timestamp: <ISO>
+   notes: <user's fail reason or "OK">
+   ```
+5. If `fail`, **treat the user's notes as a new patches.json entry** and
+   loop back to Round N+1 even if reviewer said blocker=0. The human verdict
+   overrides the AI verdict. Bound autonomy (max 3 rounds) still applies —
+   if 3 human-review rounds also fail, escalate.
+6. Only after `verdict: pass` may you report completion.
+
+This is the gate that turned Phase 4 from "AI 評価 100%" into actual
+delivery. Skipping it is the same failure mode as Phase 4.B.3
+over-claiming E3 purity without runtime verification.
 
 ### Applying patches
 

@@ -62,6 +62,23 @@ auto-falls back to `subagent_type="general-purpose"` with a prompt body
 that loads the reviewer spec. This works but loses `context: fork`
 strict purity (the reviewer shares one context with the orchestrator).
 
+### Human review is the final gate (don't skip)
+
+The 27-point rubric (`agents/shortvideo-reviewer.md`) runs on Vision
+LLM, which shares blind spots with the generator: pacing that feels
+dead, captions that read fine but land wrong, illust that doesn't
+match voice tone. `blocker=0` from the reviewer is necessary but
+**not sufficient** for completion.
+
+`/shortvideo-loop` now opens `output.mp4` in QuickTime and waits for
+your explicit `pass` / `fail` verdict before reporting completion.
+Verdict + reason is written to `projects/<name>/HUMAN_REVIEW.md`. A
+`fail` verdict starts a new round with your reason added to
+`patches.json`, even if the reviewer said the video was clean.
+
+This gate was added in Phase 4.F after the user pointed out that
+"AI evaluating AI" closed the loop prematurely.
+
 ### Stock footage sources
 
 Default fetcher is Pexels (`scripts/fetch_pexels_id.py`). When Pexels

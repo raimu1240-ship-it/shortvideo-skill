@@ -86,6 +86,21 @@ judgment", noa-carousel-reviewer 設計同型).
 | L02 | Caption makes an unverifiable superiority/best claim (景表法 risk) | blocker | "私には合ってた" | "業界 No.1" "全員に効く" "絶対痩せる" |
 | L03 | A trademarked logo or third-party brand appears in a frame | blocker | 無印良品風の白い棚だけ写る | スターバックスのロゴカップが手前 8 秒映る |
 
+### H. Human gate (1) — Hard requirement, never skipped
+
+| ID | Criterion | severity | OK 例 | NG 例 |
+|---|---|---|---|---|
+| H01 | `HUMAN_REVIEW.md` exists with `verdict: pass` for the current round | blocker | round_3 後にユーザーが `open output.mp4` で視聴して "pass、OK です" と判定、HUMAN_REVIEW.md に記録 | reviewer が blocker=0 を出した時点で完了宣言、人間目視せず |
+
+reviewer が H01 blocker と出した場合の意味: 「26 点 + V09 では問題無いが、
+**まだ人間が見ていない**ので Phase 完了とは呼べない」。`/shortvideo-loop`
+の最終 step (Human review gate) が完了するまで H01 blocker は残り続ける。
+
+これは公式 harness-design 原則「verifier が generator と同じ盲点を共有する」
+(agent-essence.md V-2 / C-3) への構造的対処。reviewer 単独で「完了」を
+宣言すると Generator-Verifier の rubber-stamp 問題に陥るため、最終 gate
+を人間に持たせる。Phase 4.F で追加された。
+
 ### Q. Technical Quality (5)
 
 | ID | Criterion | severity | OK 例 | NG 例 |
