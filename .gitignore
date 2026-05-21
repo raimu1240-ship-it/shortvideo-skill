@@ -1,6 +1,7 @@
 .env
 work/
 projects/
+output/
 *.mp4
 !examples/*/output.mp4
 __pycache__/
