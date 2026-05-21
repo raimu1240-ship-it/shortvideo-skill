@@ -86,15 +86,11 @@ cmd.exe を使う場合は `install.bat` をダブルクリック (中で PowerS
 
 個別に動かしたい場合は `/shortvideo-planner` や `/shortvideo-generator` を直接呼ぶこともできます。
 
-### 重要: claude は必ずリポジトリ内で起動
+### claude はどのディレクトリで起動しても OK
 
-```bash
-cd ~/code/shortvideo-skill       # Mac/Linux
-# または cd $env:USERPROFILE\code\shortvideo-skill   # Windows
-claude
-```
+`install.sh` / `install.ps1` が `~/.claude/` 配下に symlink を貼るので、Claude Code はどのディレクトリで起動してもこの 3 エージェントを認識します。普段使っている作業ディレクトリで claude を起動してそのまま `/shortvideo-loop <名前>` を打ち込んでください。
 
-**別ディレクトリから `claude` を起動すると、3 エージェントが見つからず動きません**。Claude Code は cwd の `.claude/agents/` を読みに行く仕様のため、必ずリポジトリ内で起動してください。
+**生成物は `claude を起動した cwd 配下の `projects/<名前>/`** に作られます。例えば `~/Documents/work/` で claude を起動 → `/shortvideo-loop test` → `~/Documents/work/projects/test/output.mp4` に動画が出ます。
 
 ## 背景動画ソース
 
@@ -111,19 +107,18 @@ claude
 
 ### `Agent type 'shortvideo-planner' not found` が出る
 
-cwd がリポジトリ外で claude を起動した可能性。Ctrl+C で claude を終了して:
+`~/.claude/agents/` に shortvideo-* の symlink が無い状態。install.sh を再実行してください:
 
 ```bash
-cd ~/code/shortvideo-skill   # Mac/Linux
-# または cd $env:USERPROFILE\code\shortvideo-skill   # Windows
-claude
+cd ~/code/shortvideo-skill && ./install.sh   # Mac/Linux
+# または: cd $env:USERPROFILE\code\shortvideo-skill && .\install.ps1   # Windows
 ```
 
-で再起動してください。
+その後 **Claude Code を一旦終了 (Ctrl+C) → `claude` で再起動**。Claude Code は起動時にエージェント一覧を読み込むため、install 直後の現セッションでは新エージェントが見えません。
 
 ### `Skill ... cannot be used with Skill tool due to disable-model-invocation` が出る
 
-これは subagent が見つからず Skill tool にフォールバックして拒否された状態です。原因は上と同じ (cwd 違い)。`cd リポジトリ && claude` で再起動。
+subagent が見つからず Skill tool にフォールバックして拒否された状態。原因は上と同じ (install.sh 未実行 or symlink 損失)。`./install.sh` 再実行 → claude 再起動で解消。
 
 ### agent symlink が無い
 

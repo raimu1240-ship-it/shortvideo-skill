@@ -16,7 +16,21 @@ Runs Stages 0-6 sequentially. Each stage has a single responsibility, machine-ch
 
 - AFTER `shortvideo-planner` has saved a frozen `input.json`
 - Invoked manually (`disable-model-invocation: true`) — never automatic
-- Project path = `projects/<name>/` (relative to repo root or absolute)
+- Project path = `projects/<name>/` (cwd 相対、つまり claude 起動ディレクトリ配下に作られる)
+
+## 必須: repo root の resolve
+
+すべての shell コマンドの前に、以下を実行して repo root を環境変数に保存する。
+`scripts/` への参照は cwd 不問のため絶対パス化が必要 (`projects/` は cwd 配下で OK)。
+
+```bash
+SV_REPO=$(python3 -c "import os; print(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(os.path.expanduser('~/.claude/agents/shortvideo-planner.md'))))))")
+```
+
+これは `~/.claude/agents/shortvideo-planner.md` の symlink を辿って repo root
+(`~/code/shortvideo-skill` 等) を取得する。install.sh で symlink が貼られている前提。
+
+以降の `scripts/...` 呼び出しはすべて `$SV_REPO/scripts/...` で行う。
 
 ## Required references
 
@@ -50,7 +64,7 @@ Stage Progress:
 ### Stage 0 — validate input.json
 
 ```bash
-python3 scripts/lint_recipe.py projects/$1/input.json
+python3 $SV_REPO/scripts/lint_recipe.py projects/$1/input.json
 ```
 
 Exit 1 (error) → stop, ask user to fix. Exit 2 (warnings only) → proceed but surface warnings to user before continuing.
@@ -62,7 +76,7 @@ For each segment, the planner has set `bg_query` like `"japan train station"`.
 1. WebFetch `https://www.pexels.com/ja-jp/search/videos/<url-encoded query>/` → extract up to 5 video page IDs (format `/ja-jp/video/<id>/`)
 2. WebFetch each video page → find direct mp4 URL (pattern `videos.pexels.com/video-files/<id>/*.mp4`)
 3. Pick the first 1080x1920 (or any 9:16) candidate; if none, fall back to landscape (will be cropped later)
-4. Download with `python3 scripts/fetch_pexels.py <url> projects/$1/work/assets/bg_<sid>.mp4 --cache projects/$1/work/cache/pexels`
+4. Download with `python3 $SV_REPO/scripts/fetch_pexels.py <url> projects/$1/work/assets/bg_<sid>.mp4 --cache projects/$1/work/cache/pexels`
 
 ### Stage 2 — fetch irasutoya inserts
 
@@ -70,12 +84,12 @@ For each segment with `illust_query`:
 
 1. WebFetch `https://www.irasutoya.com/feeds/posts/default?q=<query>&max-results=6&alt=json` → list article URLs
 2. WebFetch one article page → extract `s800` PNG URL on `blogger.googleusercontent.com`
-3. Download with `python3 scripts/fetch_irasutoya.py <url> projects/$1/work/assets/illust_<sid>.png --cache projects/$1/work/cache/irasutoya`
+3. Download with `python3 $SV_REPO/scripts/fetch_irasutoya.py <url> projects/$1/work/assets/illust_<sid>.png --cache projects/$1/work/cache/irasutoya`
 
 ### Stage 3 — contact_sheet review (Vision pass)
 
 ```bash
-python3 scripts/contact_sheet.py --videos projects/$1/work/assets/bg_*.mp4 --out projects/$1/work/contact_sheet.jpg
+python3 $SV_REPO/scripts/contact_sheet.py --videos projects/$1/work/assets/bg_*.mp4 --out projects/$1/work/contact_sheet.jpg
 ```
 
 Read the contact sheet via the Read tool and judge visually: does every frame look like Japan? If any cell looks like overseas (playground / signage / pedestrians), set `contact_sheet_passed: false` for that segment in `input.json` and **return to Stage 1** with a different `bg_query` (e.g. add "tokyo" or "kyoto" qualifier).
@@ -85,7 +99,7 @@ Only proceed when every segment has `contact_sheet_passed: true`.
 ### Stage 4 — narration (per-segment)
 
 ```bash
-python3 scripts/tts_elevenlabs.py --per-segment \
+python3 $SV_REPO/scripts/tts_elevenlabs.py --per-segment \
   --input-json projects/$1/input.json \
   --out-dir projects/$1/work/voices
 ```
@@ -99,14 +113,14 @@ video duration ≒ voice duration (no `-shortest` truncation, no trailing silenc
 If `ELEVENLABS_API_KEY` is in `.env`, ElevenLabs Morioki is used; otherwise
 macOS `say -v Otoya`.
 
-Legacy single-mode (`python3 scripts/tts_elevenlabs.py --text "..." voice.mp3`)
+Legacy single-mode (`python3 $SV_REPO/scripts/tts_elevenlabs.py --text "..." voice.mp3`)
 is still supported for backwards compat — render falls back to legacy when
 `durations.json` is absent.
 
 ### Stage 5 — captions + bubbles
 
 ```bash
-python3 scripts/make_captions.py projects/$1/input.json projects/$1/work/captions
+python3 $SV_REPO/scripts/make_captions.py projects/$1/input.json projects/$1/work/captions
 ```
 
 Writes `cap_main_<sid>.png` and `bubble_<sid>.png` per segment. Resolution-aware Y coordinates from `overlay-positioning.md` are baked into the script.
@@ -114,7 +128,7 @@ Writes `cap_main_<sid>.png` and `bubble_<sid>.png` per segment. Resolution-aware
 ### Stage 6 — render
 
 ```bash
-python3 scripts/render_video.py projects/$1/input.json projects/$1/work projects/$1/output.mp4
+python3 $SV_REPO/scripts/render_video.py projects/$1/input.json projects/$1/work projects/$1/output.mp4
 ```
 
 Deterministic ffmpeg pipeline: per-segment bg trim → scene overlay (scrim + illust + bubble + caption) → concat → voice mux. Uses `crf 23`, `pix_fmt yuv420p`, `preset medium`, fixed fps from input.json.
@@ -122,7 +136,7 @@ Deterministic ffmpeg pipeline: per-segment bg trim → scene overlay (scrim + il
 ### Stage 7 — quality probe
 
 ```bash
-python3 scripts/ffprobe_quality.py projects/$1/output.mp4 projects/$1/input.json --out projects/$1/ffprobe_quality.json
+python3 $SV_REPO/scripts/ffprobe_quality.py projects/$1/output.mp4 projects/$1/input.json --out projects/$1/ffprobe_quality.json
 ```
 
 Exit 0 (pass) → done, report path to user. Exit 1 (acceptance failed) → surface specific errors, the orchestrator will trigger the reviewer.

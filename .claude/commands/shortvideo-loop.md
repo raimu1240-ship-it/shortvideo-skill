@@ -40,8 +40,8 @@ shortvideo-loop progress (project=<name>)
 
 #### `Agent type 'shortvideo-planner' not found` が返った場合
 
-これは Claude Code が **リポジトリ外の cwd で起動された**証拠 (project-level
-`.claude/agents/` が見えていない)。
+これは Personal scope の subagent symlink が見つからない状態。install.sh の
+再実行が必要。
 
 - **Skill tool で代替起動を試みない**。`/shortvideo-planner` skill は
   `disable-model-invocation: true` で programmatic 呼び出しを拒否するため、
@@ -50,17 +50,19 @@ shortvideo-loop progress (project=<name>)
 
   ```
   ⚠ shortvideo-planner subagent が見つかりません。
-    Claude Code がリポジトリ外で起動された可能性があります。
+    install.sh の再実行が必要です:
 
-    対処:
-      1. Ctrl+C で claude を終了
-      2. cd ~/code/shortvideo-skill   (Mac/Linux)
-         cd $env:USERPROFILE\code\shortvideo-skill   (Windows)
-      3. claude
-      4. /shortvideo-loop <name>
+      cd ~/code/shortvideo-skill && ./install.sh   (Mac/Linux)
+      cd $env:USERPROFILE\code\shortvideo-skill && .\install.ps1  (Windows)
 
-    それでも出る場合は install.sh を再実行してください:
-      cd ~/code/shortvideo-skill && ./install.sh
+    その後 Claude Code を一旦終了 (Ctrl+C) して再起動:
+
+      claude
+      /shortvideo-loop <name>
+
+    再起動が必要なのは、Claude Code が起動時にエージェント一覧を
+    読み込むためです。インストール後の現セッションでは新エージェントが
+    見えません。
   ```
 
 - 上記メッセージを返したらループは中断する (勝手にフォールバック起動しない)
@@ -77,15 +79,12 @@ shortvideo-loop progress (project=<name>)
    - 同様に generator も Agent tool 経由で起動する。planner / generator /
      reviewer の 3 つを subagent として呼ぶことで、TaskList / transcript で
      緑 / 青 / 紫の色分けでどのエージェントが動いているか視覚的に分かる
-   - **推奨**: `subagent_type="shortvideo-reviewer"`。これは
-     `.claude/agents/shortvideo-reviewer.md` がランタイムから見える状態が必要、
-     具体的には **`claude` がこのリポジトリのディレクトリで起動されていること**
-     (Claude Code は project-level `.claude/agents/` を cwd から読む)。
-     実機検証で確認済み: `~/.claude/agents/shortvideo-reviewer.md` の
-     Personal-scope symlink だけでは、cwd が別ディレクトリの時に reviewer
-     を見つけられない
+   - `~/.claude/agents/shortvideo-reviewer.md` (Personal scope symlink) は
+     **cwd 不問で discoverable**。ユーザーはどのディレクトリで claude を起動
+     しても reviewer を呼べる
    - **`Agent type ... not found` が返った場合** (generator / reviewer どちらも同じ):
-     これは Claude Code がリポジトリ外の cwd で起動された証拠。
+     Personal scope の subagent symlink が見つからない状態。install.sh の
+     再実行 + Claude Code 再起動が必要。
      **Skill tool で代替起動を試みない** (skill は `disable-model-invocation: true` で拒否される)。
      代わりに Round 0 の「Agent not found」セクションと同じメッセージを返して **stop**。
      general-purpose subagent へのフォールバックは行わない (独立 context が崩れて
@@ -148,7 +147,8 @@ Unknown patch types: leave a warning in the user message; do not modify input.js
 After applying patches, write the updated input.json. Then recompute segment hashes:
 
 ```bash
-python3 scripts/segment_hash.py projects/<name>/input.json \
+SV_REPO=$(python3 -c "import os; print(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(os.path.expanduser('~/.claude/agents/shortvideo-planner.md'))))))")
+python3 $SV_REPO/scripts/segment_hash.py projects/<name>/input.json \
   --diff projects/<name>/history/round_<N-1>/segment_hashes.json \
   > projects/<name>/history/round_<N>/segment_hash_diff.json
 ```

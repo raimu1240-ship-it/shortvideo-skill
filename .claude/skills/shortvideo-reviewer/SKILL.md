@@ -12,14 +12,25 @@ Review the generated video at `projects/$ARGUMENTS/output.mp4` against `projects
 
 You are running in a forked subagent context with no memory of how the video was generated. Treat every finding as a fresh judgement — do not assume the generator made correct choices.
 
+## 必須: repo root の resolve
+
+`examples/` への参照は cwd 不問のため絶対パス化が必要。冒頭で実行:
+
+```bash
+SV_REPO=$(python3 -c "import os; print(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(os.path.expanduser('~/.claude/agents/shortvideo-reviewer.md'))))))")
+```
+
+以降の `examples/...` 参照はすべて `$SV_REPO/examples/...` で行う。`projects/...` は
+cwd 配下なのでそのまま (claude 起動ディレクトリ配下に生成物が作られる)。
+
 ## Inputs
 
-- `projects/$ARGUMENTS/output.mp4`
+- `projects/$ARGUMENTS/output.mp4` (cwd 配下)
 - `projects/$ARGUMENTS/input.json` (read `acceptance_criteria` as the sprint contract)
 - `projects/$ARGUMENTS/ffprobe_quality.json` (mechanical metrics)
-- `examples/sample-01-10s/review_report.md` (参考事例: reviewer が判定基準を学ぶ材料、一度だけ読む)
-- `examples/sample-03-60s-pass/review_report.md` (人間レビュー pass 済みの 60 秒見本)
-- `examples/sample-01-30s/review_report.md` if it exists (additional calibration)
+- `$SV_REPO/examples/sample-01-10s/review_report.md` (参考事例: reviewer が判定基準を学ぶ材料、一度だけ読む)
+- `$SV_REPO/examples/sample-03-60s-pass/review_report.md` (人間レビュー pass 済みの 60 秒見本)
+- `$SV_REPO/examples/sample-01-30s/review_report.md` if it exists (additional calibration)
 
 ## Steps
 
@@ -49,4 +60,4 @@ You are running in a forked subagent context with no memory of how the video was
 
 ## Calibration
 
-When in doubt about whether a finding is blocker vs warning, compare to the closest example in `examples/*/review_report.md`. If still ambiguous, default to **warning** — do not over-block. Conversely, if `acceptance_criteria.must_not_have` lists the item, it is **always blocker**.
+When in doubt about whether a finding is blocker vs warning, compare to the closest example in `$SV_REPO/examples/*/review_report.md`. If still ambiguous, default to **warning** — do not over-block. Conversely, if `acceptance_criteria.must_not_have` lists the item, it is **always blocker**.

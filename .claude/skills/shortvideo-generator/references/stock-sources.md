@@ -3,7 +3,7 @@
 bg_query で Pexels が hit しない / 海外混入率が高い / 同じ素材を 2 段
 重複させたくない場合に、以下の代替ソースを試す。全て商用利用 OK の
 フリー素材ソース。著作権表示は acceptance_criteria.must_have に含めて
-いないが、社員配布前に各サイトの最新利用規約を確認すること。
+いないが、配布前に各サイトの最新利用規約を確認すること。
 
 ## ソース一覧 (優先順)
 
@@ -20,7 +20,7 @@ bg_query で Pexels が hit しない / 海外混入率が高い / 同じ素材�
 
 - 検索 URL: `https://www.pexels.com/ja-jp/search/videos/<query>/`
 - 直 mp4 URL pattern: `https://videos.pexels.com/video-files/<id>/<file>_<W>_<H>_<fps>fps.mp4`
-- 抽出: `python3 scripts/fetch_pexels_id.py <video_id_1> <video_id_2> ... --json-list`
+- 抽出: `python3 $SV_REPO/scripts/fetch_pexels_id.py <video_id_1> <video_id_2> ... --json-list`
   - 内部で Cloudflare bypass headers + URL filter (`videos.pexels.com/video-files/<page_id>/...`) で 9:16 縦動画優先抽出
   - 動作確認済み: 8/8 成功
 
