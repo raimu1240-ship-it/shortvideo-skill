@@ -11,11 +11,11 @@ Built on the Anthropic [Agent Skills](https://code.claude.com/docs/en/skills) st
 | `.claude/skills/shortvideo-planner/` | Turn user brief into a frozen `input.json` (sprint contract) |
 | `.claude/skills/shortvideo-generator/` | 7-stage pipeline: lint → fetch → curate → narrate → caption → render → probe |
 | `.claude/skills/shortvideo-reviewer/` | Independent reviewer running in a forked subagent context |
-| `.claude/agents/shortvideo-reviewer.md` | 27-point rubric (V/T/A/P/L/Q, V09 added in Phase 4.D.1 for illust grid) |
+| `.claude/agents/shortvideo-reviewer.md` | 27+H rubric (V/T/A/P/L/Q + H01 human gate, V09 added Phase 4.D.1, H01 added Phase 4.F) |
 | `.claude/commands/shortvideo-loop.md` | End-to-end orchestrator with bound autonomy (max 3 rounds) |
 | `scripts/` | 8 Python utilities (lint, fetch, render, probe, captions, contact-sheet, tts) |
 | `evaluations/` | 3 eval scenarios (replay, overseas-bg rejection, PR-tone rejection) |
-| `examples/` | Frozen passing examples used by the reviewer for few-shot calibration |
+| `examples/` | Frozen passing examples (incl. `sample-03-60s-pass/` — 60s exemplar with `HUMAN_REVIEW.md verdict=pass`) used by the reviewer for few-shot calibration |
 
 ## Install
 
