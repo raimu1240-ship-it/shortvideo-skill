@@ -87,12 +87,17 @@ def make_caption_png(out_path: Path, lines: list[str], y_top: int,
 
 def make_bubble_png(out_path: Path, text: str, y_center: int,
                     font_path: str, w: int, h: int) -> None:
-    """いらすとや の下に置く半透明グレー角丸吹き出し。"""
+    """いらすとや の下に置く半透明グレー角丸吹き出し。
+
+    テキストは枠の上下左右中央に anchor="mm" で配置する。
+    旧実装の `draw.text((..., by + pad_y - 2), ...)` は Pillow `textbbox` の
+    bbox[1] オフセット (ascent 上の余白) を補正しておらず、フォントによって
+    枠内で文字が下寄りに表示されるバグがあった (test-001 Round 4 で fix)。"""
     img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     fs = max(28, int(w / 22))
     font = ImageFont.truetype(font_path, fs)
-    bbox = draw.textbbox((0, 0), text, font=font)
+    bbox = draw.textbbox((0, 0), text, font=font, anchor="lt")
     tw = bbox[2] - bbox[0]
     th = bbox[3] - bbox[1]
     pad_x, pad_y = 26, 14
@@ -102,7 +107,8 @@ def make_bubble_png(out_path: Path, text: str, y_center: int,
     by2 = by + th + pad_y * 2
     draw.rounded_rectangle([bx, by, bx2, by2], radius=16,
                             fill=(245, 245, 245, 230))
-    draw.text(((w - tw) // 2, by + pad_y - 2), text, font=font,
+    cy = (by + by2) // 2
+    draw.text((w // 2, cy), text, font=font, anchor="mm",
               fill=(40, 40, 40, 255))
     img.save(out_path)
 

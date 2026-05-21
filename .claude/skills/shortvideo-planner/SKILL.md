@@ -35,6 +35,33 @@ Plan a short empathy-first vertical video and produce a frozen `input.json` that
    - `voice_provider: "auto"` (auto-switches to ElevenLabs if API key, else say)
    - `seed: 42` (for deterministic asset picking)
 
+### duration_sec の決め方 (一律値禁止)
+
+**絶対に `duration_sec=8.0` のような一律値を全 segment にコピーしない**。
+test-001 で実発話 4-5s に対して duration_sec=8.0 を一律設定したため、
+generator (render_video.py) が `apad=whole_dur=8` で末尾に 3-4s の無音 padding
+を入れ、視聴体験が「途中で会話が止まる」状態になった (Round 3 fail)。
+
+推定式 (Otoya 180wpm / Morioki 200wpm 換算):
+- 日本語 voice_text を **モーラ数 (≒ かな文字数)** で数える
+- macOS say (Otoya 180): `duration = mora_count / 8.5 + 0.4` (発話 + 0.4s 余韻)
+- ElevenLabs Morioki: `duration = mora_count / 9.5 + 0.4`
+- 漢字 1 字 ≒ 2 モーラと仮置き (「工場 (こうじょう)」= 4 モーラ)
+
+planner 段では推定値で OK。generator Stage 4 が actual TTS 後に
+`work/voices/durations.json` を吐くので、ズレが大きい場合は patch で
+`set_field` 経由で補正される設計 (`A03` blocker: voice 長 vs duration_sec
+差 > 0.3s)。
+
+| voice_text 例 | モーラ数目安 | 推定 duration_sec (Otoya) |
+|---|---|---|
+| 「迷ってた頃の話」(8 モーラ) | 8 | 1.4s + 余韻 0.5 = **2.0s** |
+| 「電車で考え事が止まらなくて」(15 モーラ) | 15 | 2.2s + 0.5 = **2.7s** |
+| 「気付いたら、自然と変わってた」(15 モーラ) | 15 | 2.2s + 0.5 = **2.7s** |
+| 「○○を試してから 3 ヶ月、毎朝スッキリ」(20 モーラ) | 20 | 2.8s + 0.5 = **3.3s** |
+
+短尺 (5-7s/seg) を基本にしてテンポを保つ。長すぎる voice_text は分割する。
+
 5. Echo the draft to the user, ask "この内容で確定して generator に流していい？"
 
 6. On approval, save the file and exit. Do NOT call the generator yourself — that is the orchestrator's job.
@@ -80,7 +107,9 @@ If the user's brief implies any item in `must_not_have` (e.g. they want a "PR ba
 - voice_text と caption_main は漢字優先で揃える (ElevenLabs アクセント安定化)
 - voice_text と caption_main は文字集合 60% 以上 overlap させる (T06 検出回避)
 - voice_text の自然な発話長 ≈ segment.duration_sec ±0.5s。voice が短いと
-  `-shortest` で動画が切れ、長いと caption 表示が voice より先に終わる
+  末尾無音 padding (`apad=whole_dur=N`) が長くなり「会話が途中で止まる」現象、
+  長いと caption 表示が voice より先に終わる。**duration_sec を一律値で揃えない**
+  (上記「duration_sec の決め方」セクション参照)
 - sub_delay は 2.0 〜 4.0 秒、0 は禁止 (視聴者がスキップする)
 - 一人称・体験談・気付きトーン。ブランド名や商品名を caption に書かない
 - 背景は日本ロケのみ。bg_query に "japan ..." を明示

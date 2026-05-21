@@ -2,7 +2,7 @@
 
 ## 何ができるツール?
 
-1 行のテーマから、共感型の縦動画 (720x1280 または 1080x1920) を 5〜10 分で自動生成する Claude Code 用ツール。Mac / Windows 両方で動く。
+1 行のテーマから、共感型の縦動画 (720x1280 または 1080x1920) を自動生成する Claude Code 用ツール。Mac / Windows 両方で動く。
 
 **例**:
 - 入力: 「派遣で働いていた頃の気付き、30 代会社員向け」
@@ -23,7 +23,13 @@
 
 要するに **「動画を組み立てる部分は強い、台本の中身そのものは別途整える前提」** のツールです。
 
-## 5 分で動かす (Mac / Linux)
+### 所要時間の目安
+
+- **10 秒の単純なケース**: 15-30 分 (planner → generate → reviewer → 人間 gate、修正なしで通った場合)
+- **60 秒で複数 segment + 修正ラウンドあり**: 1 本あたり **30 分〜1 時間** (3 ラウンドの自動修正 + 人間レビュー gate 込み)
+- 「ポチって 5 分で完成」ツールではない。動画品質のチェックと修正を AI と人間でループする前提
+
+## インストールして起動 (Mac / Linux)
 
 ```bash
 git clone https://github.com/raimu1240-ship-it/shortvideo-skill.git ~/code/shortvideo-skill
@@ -36,7 +42,7 @@ claude
 
 `my-first-video` は好きなプロジェクト名 (英数字とハイフン)。動画は `projects/my-first-video/output.mp4` に出力されます。
 
-## 5 分で動かす (Windows)
+## インストールして起動 (Windows)
 
 **事前準備**: symlink 作成のため以下のどちらかが必要です:
 

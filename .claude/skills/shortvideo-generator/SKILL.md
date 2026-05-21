@@ -78,6 +78,38 @@ For each segment, the planner has set `bg_query` like `"japan train station"`.
 3. Pick the first 1080x1920 (or any 9:16) candidate; if none, fall back to landscape (will be cropped later)
 4. Download with `python3 $SV_REPO/scripts/fetch_pexels.py <url> projects/$1/work/assets/bg_<sid>.mp4 --cache projects/$1/work/cache/pexels`
 
+**chunk rotation の素材プールは render_video.py が自動構築**: 全 segment の
+`bg_<sid>.mp4` を集めて 1 つの `bg_pool` にまとめ、各 chunk で
+`global_chunk_offset` を進めて cross-segment で別 src を pick する設計
+(`scripts/render_video.py:246-257`)。segment ごとに別ファイルを持たせる
+必要はない — **大事なのは planner が seg ごとに unique な `bg_query` を
+書くこと** (V07 ルール: 同一 bg_query が 50% 超で blocker)。
+
+### Stage 1.5 — stale cache 自動削除 (bg_pool / bg_query 切替検出)
+
+input.json が前ラウンドから変更された場合、**前ラウンドの bg 素材と chunk が
+残ったまま再生成すると古い動画が混入する** (test-001 Round 2→3 で発生)。
+Stage 1 開始前に、各 segment の現在の `bg_pool` / `bg_query` と
+`work/stages/scene_<sid>_chunk_*.mp4` / `work/assets/bg_<sid>*.mp4` を照合し、
+**input.json で値が変わっている segment** は cache を削除:
+
+```bash
+python3 $SV_REPO/scripts/segment_hash.py projects/$1/input.json \
+  --diff projects/$1/history/round_<N-1>/segment_hashes.json \
+  > projects/$1/history/round_<N>/segment_hash_diff.json
+# changed/removed segment id ごとに以下を実行
+for sid in $(jq -r '.changed[], .removed[]' projects/$1/history/round_<N>/segment_hash_diff.json); do
+  rm -f projects/$1/work/assets/bg_${sid}*.mp4 \
+        projects/$1/work/assets/illust_${sid}.png \
+        projects/$1/work/stages/scene_${sid}_*.mp4 \
+        projects/$1/work/voices/voice_${sid}*.mp3 \
+        projects/$1/work/captions/cap_main_${sid}.png \
+        projects/$1/work/captions/bubble_${sid}.png
+done
+```
+
+unchanged segment は cache 再利用 OK (高速化)。
+
 ### Stage 2 — fetch irasutoya inserts
 
 For each segment with `illust_query`:
@@ -125,13 +157,29 @@ python3 $SV_REPO/scripts/make_captions.py projects/$1/input.json projects/$1/wor
 
 Writes `cap_main_<sid>.png` and `bubble_<sid>.png` per segment. Resolution-aware Y coordinates from `overlay-positioning.md` are baked into the script.
 
-### Stage 6 — render
+### Stage 6 — render (bg は約 2.5 秒ごと chunk rotation)
 
 ```bash
 python3 $SV_REPO/scripts/render_video.py projects/$1/input.json projects/$1/work projects/$1/output.mp4
 ```
 
 Deterministic ffmpeg pipeline: per-segment bg trim → scene overlay (scrim + illust + bubble + caption) → concat → voice mux. Uses `crf 23`, `pix_fmt yuv420p`, `preset medium`, fixed fps from input.json.
+
+**背景動画の chunk rotation (実装済仕様、変更禁止)**: `prepare_segment()`
+(`scripts/render_video.py:51-128`) が 1 segment を `FASTCUT_CHUNK_SEC=2.5s`
+目安で chunk 分割し、各 chunk を `scene_<sid>chunk<N>.mp4` として書き出して
+concat する。視聴者が「同じ動画が長時間流れている」と感じないための仕様。
+
+- chunk 数: `max(2, round(duration_sec / 2.5))` = 最低 2 chunks/seg
+- 各 chunk の src: 全 seg `bg_*.mp4` を集めた pool から
+  `global_chunk_offset` rotation で cross-segment pick (segment 境界を越えて
+  別 src を順次使う設計)
+- **pool バリエーションが落ちる = 全 chunk が同じ src の offset 違いで終わる**
+  ため、planner で seg ごとに unique な `bg_query` を書くことが死活的に重要
+  (V07 = 同一 bg_query >50% で blocker)
+
+reviewer rubric V10 が「unique src 数 == 1 の segment があれば blocker」で
+機械検出する (= bg_query 重複の極端ケースを後段でも catch)。
 
 ### Stage 7 — quality probe
 

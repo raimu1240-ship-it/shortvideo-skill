@@ -36,7 +36,7 @@ You are the independent reviewer for shortvideo-generator output. You have no kn
 reviewer が抽象的にしか判断できず、ほぼ全部「pass」と返してしまう症状
 (ハンコ押し化) を防ぐためのもの。具体例があると判定がブレない。
 
-### V. Visual (9)
+### V. Visual (10)
 
 | ID | Criterion | severity | OK 例 | NG 例 |
 |---|---|---|---|---|
@@ -49,6 +49,7 @@ reviewer が抽象的にしか判断できず、ほぼ全部「pass」と返し�
 | V07 | Same bg_query used in >50% of segments (>33% = warning) | blocker (>50%) / warning (>33%) | 10 seg で 4-5 unique bg_query、最多でも 30% | 10 seg のうち 5 seg が "japan train station morning" 重複 (50%) |
 | V08 | Same illust_query used in >50% of segments (>33% = warning) | blocker (>50%) / warning (>33%) | 6 seg で 3-4 unique illust_query、ペルソナ局面ごとに分散 | 10 seg のうち 6 seg が "super_businessman" 重複 (60%) |
 | V09 | Irasutoya insert shows multi-character contact-sheet grid instead of a single hero character (title contains "いろいろな" "セット" "一覧" "種類" "5段階" "表情の" "色々な") | blocker | 「OK サインを出す人」「ニキビ顔の中年男性」など 1 人を主体にした illust | 「いろいろな表情のスーツを着た人」「グラフといろいろな表情の男性」 grid PNG が overlay されて 4-12 顔が並ぶ |
+| V10 | bg pool のバリエーション不足で 1 segment 内の見た目が単調 (全 chunk が同じ動画、offset 違いのみ) | blocker (unique src 数 == 1 の segment が 1 つでも) / warning (unique src 数 < ceil(seg数/2)) | 5 seg で `bg_query` 4 unique → main() の `bg_pool` に 4 動画、各 chunk で別 src rotation で seg 内が単調にならない | 5 seg 全てが `bg_query: "japan train station morning"` → pool 1 動画、各 chunk が同じ動画の offset 違いだけで「2-3 秒で切替わってない」感に直結 |
 
 ### T. Text (6)
 
