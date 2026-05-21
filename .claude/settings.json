@@ -1,5 +1,5 @@
 {
-  "_comment": "Trust boundary for shortvideo-skill. See docs/harness-diag-2026-05-21.md for rationale. Anthropic harness-design principle: 'evaluators must be protected from the evaluated' (review-harness/diagnosis-rubric.md C1/C3).",
+  "_comment": "Trust boundary for shortvideo-skill. See docs/harness-diag-2026-05-21.md for rationale. Anthropic harness-design principle: 'evaluators must be protected from the evaluated' (review-harness/diagnosis-rubric.md C1/C3/C4/B4).",
   "permissions": {
     "deny": [
       "Edit(.claude/agents/**)",
@@ -28,6 +28,25 @@
       "Bash(git reset --hard *)",
       "Bash(git clean -fd *)",
       "Bash(git checkout .)"
+    ],
+    "ask": [
+      "Bash(git push *)",
+      "Bash(gh pr merge *)",
+      "Bash(gh release create *)",
+      "Bash(gh repo delete *)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=\"${CLAUDE_FILE_PATHS%% *}\"; case \"$f\" in *.py) python3 -m py_compile \"$f\" 2>&1 || echo \"::warning::py_compile failed: $f\" ;; */input.json) python3 scripts/lint_recipe.py \"$f\" 2>&1 || true ;; esac"
+          }
+        ]
+      }
     ]
   }
 }
