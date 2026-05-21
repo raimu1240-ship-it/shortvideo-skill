@@ -1,6 +1,6 @@
 # shortvideo-skill — 「ものさし」ファイル sha256 baseline
-# 公式 harness-design 原則: 評価基準自体が改変されていないことを保証する
-# (review-harness/diagnosis-rubric.md C1, agent-essence.md C-5 報酬ハッキング対策)
+# Anthropic harness-design 原則: 評価基準自体が改変されていないことを保証する
+# (報酬ハッキング対策: 評価ツール / 観点 rubric / few-shot example の改変を可視化)
 #
 # このファイルが変更された PR は人間が必ず眼で確認する。
 # CI は差分があれば warning として可視化、block しない (意図的更新を妨げないため)。

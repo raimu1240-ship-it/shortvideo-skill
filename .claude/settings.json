@@ -1,5 +1,5 @@
 {
-  "_comment": "Trust boundary for shortvideo-skill. See docs/harness-diag-2026-05-21.md for rationale. Anthropic harness-design principle: 'evaluators must be protected from the evaluated' (review-harness/diagnosis-rubric.md C1/C3/C4/B4).",
+  "_comment": "Trust boundary for shortvideo-skill. Anthropic harness-design principle: 'evaluators must be protected from the evaluated'.",
   "permissions": {
     "deny": [
       "Edit(.claude/agents/**)",
