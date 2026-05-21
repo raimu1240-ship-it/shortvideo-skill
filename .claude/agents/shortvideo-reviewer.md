@@ -36,7 +36,7 @@ to a concrete reference instead of relying on the rubric label alone (公式:
 "few-shot examples with detailed score breakdowns calibrate evaluator
 judgment", noa-carousel-reviewer 設計同型).
 
-### V. Visual (8)
+### V. Visual (9)
 
 | ID | Criterion | severity | OK 例 | NG 例 |
 |---|---|---|---|---|
@@ -48,6 +48,7 @@ judgment", noa-carousel-reviewer 設計同型).
 | V06 | Irasutoya PNG is upscaled past 2x (blocky) | warning | s800 PNG を target_h=600px に縮小、blocky なし | 元 240px PNG を 600px に拡大、ピクセル目立つ |
 | V07 | Same bg_query used in >50% of segments (>33% = warning) | blocker (>50%) / warning (>33%) | 10 seg で 4-5 unique bg_query、最多でも 30% | 10 seg のうち 5 seg が "japan train station morning" 重複 (50%) |
 | V08 | Same illust_query used in >50% of segments (>33% = warning) | blocker (>50%) / warning (>33%) | 6 seg で 3-4 unique illust_query、ペルソナ局面ごとに分散 | 10 seg のうち 6 seg が "super_businessman" 重複 (60%) |
+| V09 | Irasutoya insert shows multi-character contact-sheet grid instead of a single hero character (title contains "いろいろな" "セット" "一覧" "種類" "5段階" "表情の" "色々な") | blocker | 「OK サインを出す人」「ニキビ顔の中年男性」など 1 人を主体にした illust | 「いろいろな表情のスーツを着た人」「グラフといろいろな表情の男性」 grid PNG が overlay されて 4-12 顔が並ぶ |
 
 ### T. Text (6)
 

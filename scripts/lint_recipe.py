@@ -128,6 +128,18 @@ def check(data: dict) -> tuple[list[str], list[str]]:
         if label and c and label in c:
             warns.append(f"[9] overlay label {label!r} duplicated in caption in {seg['id']}")
 
+    # V09. illust_query が grid-likely query かどうかの先制 warn
+    # justification: Phase 4.B.1 round_2 で「考える 男性」query が
+    # 「グラフといろいろな表情の男性」grid PNG を返した実観測あり。
+    # fetch_irasutoya_id.py の pick_best が grid を deprioritize するが、
+    # query 自体が grid を誘発する語の場合は planner 段で書き換えるべき。
+    V09_GRID_HINT_WORDS = ("いろいろ", "色々", "セット", "一覧", "種類", "5段階", "表情")
+    for seg in data.get("scenario", {}).get("segments", []):
+        iq = seg.get("illust_query", "") or ""
+        if any(w in iq for w in V09_GRID_HINT_WORDS):
+            warns.append(f"[V09w] illust_query {iq!r} in {seg['id']} contains a grid-hint "
+                         f"word — irasutoya may return a multi-character contact sheet")
+
     # V07/V08. bg_query / illust_query 使い回しチェック
     # justification: 本番納品では同じ素材を複数 segment で使うと「手抜き感」
     # が出る。4 segments 以上で評価、同一素材が半数超なら error、3 分の 1 超なら warn。

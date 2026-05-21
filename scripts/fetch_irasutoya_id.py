@@ -42,16 +42,27 @@ def search(query: str, max_results: int = 6) -> list[dict[str, Any]]:
     return out
 
 
+# V09 grid filter: title にこれらが含まれる entry は「複数キャラ contact sheet」の
+# 可能性が高く、render すると 1 illust 内に 4-12 顔が並ぶ blocker を生む
+# (Phase 4.B.1 round_2 で実観測、learning-loop.md フローで rubric V09 昇格)
+GRID_KEYWORDS = ("いろいろな", "セット", "一覧", "種類", "5段階", "表情の", "色々な")
+
+
+def is_grid_title(title: str) -> bool:
+    return any(k in title for k in GRID_KEYWORDS)
+
+
 def pick_best(results: list[dict[str, Any]], query: str) -> dict[str, Any] | None:
-    """query 単語が title に多く含まれるものを優先。"""
+    """query 単語の title 一致を優先、grid 誘発 title は deprioritize。"""
     if not results:
         return None
     words = [w for w in re.split(r"[\s　]+", query) if w]
     scored = []
     for r in results:
         title = r["title"]
-        score = sum(1 for w in words if w in title)
-        scored.append((score, r))
+        match_score = sum(1 for w in words if w in title)
+        grid_penalty = -10 if is_grid_title(title) else 0
+        scored.append((match_score + grid_penalty, r))
     scored.sort(key=lambda t: (-t[0],))
     return scored[0][1]
 

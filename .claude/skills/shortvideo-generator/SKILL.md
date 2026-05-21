@@ -25,6 +25,7 @@ Read each of these before the first run of a session — they encode constraints
 - [references/recipe-narration-vertical.md](references/recipe-narration-vertical.md) — Stage flow and ffmpeg patterns
 - [references/traps-9.md](references/traps-9.md) — known failure modes the scripts auto-block
 - [references/overlay-positioning.md](references/overlay-positioning.md) — Y-coordinate table by resolution
+- [references/stock-sources.md](references/stock-sources.md) — Pexels / Mixkit / Pixabay / Coverr の使い分け表
 - [references/pexels-curation.md](references/pexels-curation.md) — how to fetch Japan-only video bg via WebFetch + urllib
 - [references/irasutoya-feed-howto.md](references/irasutoya-feed-howto.md) — Atom feed + image URL extraction
 

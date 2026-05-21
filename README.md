@@ -11,7 +11,7 @@ Built on the Anthropic [Agent Skills](https://code.claude.com/docs/en/skills) st
 | `.claude/skills/shortvideo-planner/` | Turn user brief into a frozen `input.json` (sprint contract) |
 | `.claude/skills/shortvideo-generator/` | 7-stage pipeline: lint → fetch → curate → narrate → caption → render → probe |
 | `.claude/skills/shortvideo-reviewer/` | Independent reviewer running in a forked subagent context |
-| `.claude/agents/shortvideo-reviewer.md` | 26-point rubric (V/T/A/P/L/Q) used by the reviewer |
+| `.claude/agents/shortvideo-reviewer.md` | 27-point rubric (V/T/A/P/L/Q, V09 added in Phase 4.D.1 for illust grid) |
 | `.claude/commands/shortvideo-loop.md` | End-to-end orchestrator with bound autonomy (max 3 rounds) |
 | `scripts/` | 8 Python utilities (lint, fetch, render, probe, captions, contact-sheet, tts) |
 | `evaluations/` | 3 eval scenarios (replay, overseas-bg rejection, PR-tone rejection) |
@@ -61,6 +61,22 @@ If you must launch Claude Code from another directory, `/shortvideo-loop`
 auto-falls back to `subagent_type="general-purpose"` with a prompt body
 that loads the reviewer spec. This works but loses `context: fork`
 strict purity (the reviewer shares one context with the orchestrator).
+
+### Stock footage sources
+
+Default fetcher is Pexels (`scripts/fetch_pexels_id.py`). When Pexels
+returns 0 hits or the segment fails the Japan-only check, planner /
+orchestrator can fall back to:
+
+| Source | URL | Notes |
+|---|---|---|
+| Pexels | https://www.pexels.com/ja-jp/search/videos/japan/ | default, urllib + Cloudflare bypass headers |
+| Mixkit | https://mixkit.co/free-stock-video/japan/ | static HTML, easier to scrape; covers niche queries (countryside, ryokan) |
+| Pixabay | https://pixabay.com/ja/videos/search/japan/ | future addition |
+| Coverr | https://coverr.co/s?q=japan | future addition |
+
+Full table + per-source URL patterns: see
+`.claude/skills/shortvideo-generator/references/stock-sources.md`.
 
 ## Requirements
 
