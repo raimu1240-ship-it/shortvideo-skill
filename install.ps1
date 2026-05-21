@@ -110,7 +110,19 @@ if (-not (Test-Path "$repoDir\.env")) {
 }
 
 Write-Host ""
-Write-Host "インストール完了。Claude Code で次のコマンドを試してください:" -ForegroundColor Green
-Write-Host "  cd $repoDir"
-Write-Host "  claude"
-Write-Host "  /shortvideo-loop my-first-project"
+Write-Host "===================================================" -ForegroundColor Green
+Write-Host " インストール完了" -ForegroundColor Green
+Write-Host "===================================================" -ForegroundColor Green
+Write-Host ""
+Write-Host " 次の手順 (必ずこの順で):"
+Write-Host ""
+Write-Host "   1. このディレクトリで claude を起動"
+Write-Host "      cd $repoDir"
+Write-Host "      claude"
+Write-Host ""
+Write-Host "   2. Claude Code セッション内で:"
+Write-Host "      /shortvideo-loop my-first-video"
+Write-Host ""
+Write-Host " ※ 必ず $repoDir で claude を起動してください" -ForegroundColor Yellow
+Write-Host "    別ディレクトリで起動すると 3 エージェントが見つかりません" -ForegroundColor Yellow
+Write-Host ""

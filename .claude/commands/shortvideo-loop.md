@@ -38,6 +38,33 @@ shortvideo-loop progress (project=<name>)
 既に input.json があれば、このラウンドはスキップして
 「既存の input.json を使います。修正したい場合は /shortvideo-planner を手動で呼んでください」と伝える。
 
+#### `Agent type 'shortvideo-planner' not found` が返った場合
+
+これは Claude Code が **リポジトリ外の cwd で起動された**証拠 (project-level
+`.claude/agents/` が見えていない)。
+
+- **Skill tool で代替起動を試みない**。`/shortvideo-planner` skill は
+  `disable-model-invocation: true` で programmatic 呼び出しを拒否するため、
+  Skill tool 経由は確実に失敗する
+- 代わりに以下のメッセージをユーザーに返して **stop**:
+
+  ```
+  ⚠ shortvideo-planner subagent が見つかりません。
+    Claude Code がリポジトリ外で起動された可能性があります。
+
+    対処:
+      1. Ctrl+C で claude を終了
+      2. cd ~/code/shortvideo-skill   (Mac/Linux)
+         cd $env:USERPROFILE\code\shortvideo-skill   (Windows)
+      3. claude
+      4. /shortvideo-loop <name>
+
+    それでも出る場合は install.sh を再実行してください:
+      cd ~/code/shortvideo-skill && ./install.sh
+  ```
+
+- 上記メッセージを返したらループは中断する (勝手にフォールバック起動しない)
+
 ### Round N — Generate + Review (N = 1, 2, 3)
 
 1. **Agent tool** で `subagent_type="shortvideo-generator"` を起動
@@ -57,18 +84,12 @@ shortvideo-loop progress (project=<name>)
      実機検証で確認済み: `~/.claude/agents/shortvideo-reviewer.md` の
      Personal-scope symlink だけでは、cwd が別ディレクトリの時に reviewer
      を見つけられない
-   - **フォールバック (`Agent type 'shortvideo-reviewer' not found` の時)**:
-     `subagent_type="general-purpose"` で以下の prompt を渡す —
-     "You are the shortvideo-reviewer subagent. Read the agent spec at
-     `.claude/agents/shortvideo-reviewer.md` first, then execute the steps in
-     `.claude/skills/shortvideo-reviewer/SKILL.md` for project `<name>`.
-     Working directory: repo root. Required outputs:
-     `projects/<name>/review_report.md` (Markdown with `blocker=N / warning=M
-     / info=K` summary line + sections + `## Patches (JSON array)`) and
-     `projects/<name>/patches.json` (JSON array of patches)."
-     フォールバックは `context: fork` の独立性を失う (reviewer が orchestrator
-     と context を共有してしまう) が、ループは継続できる。フォールバック使用時
-     はユーザーへの返信で warning を出す
+   - **`Agent type ... not found` が返った場合** (generator / reviewer どちらも同じ):
+     これは Claude Code がリポジトリ外の cwd で起動された証拠。
+     **Skill tool で代替起動を試みない** (skill は `disable-model-invocation: true` で拒否される)。
+     代わりに Round 0 の「Agent not found」セクションと同じメッセージを返して **stop**。
+     general-purpose subagent へのフォールバックは行わない (独立 context が崩れて
+     判定が信頼できなくなるため)
 3. Read `projects/<name>/review_report.md` (the reviewer's summary)
 4. Copy the report to `projects/<name>/history/round_<N>/review_report.md`
 
