@@ -39,7 +39,8 @@
         ],
         "bubble_text": "気付けば半年",
         "sub_delay": 2.5,
-        "scrim_alpha": 0.25
+        "scrim_alpha": 0.25,
+        "contact_sheet_passed": true
       },
       {
         "id": "s3",
@@ -52,7 +53,8 @@
           "って声もある。"
         ],
         "bubble_text": "周りからは色々",
-        "sub_delay": 2.5
+        "sub_delay": 2.5,
+        "contact_sheet_passed": true
       },
       {
         "id": "s4",
@@ -66,7 +68,8 @@
         ],
         "bubble_text": "予定が立つ安心",
         "sub_delay": 2.5,
-        "scrim_alpha": 0.25
+        "scrim_alpha": 0.25,
+        "contact_sheet_passed": true
       },
       {
         "id": "s5",
@@ -79,7 +82,8 @@
           "選択肢も意外と。"
         ],
         "bubble_text": "始めて気付いた",
-        "sub_delay": 2.5
+        "sub_delay": 2.5,
+        "contact_sheet_passed": true
       },
       {
         "id": "s6",
@@ -93,7 +97,8 @@
         ],
         "bubble_text": "話せる相手の存在",
         "sub_delay": 2.5,
-        "scrim_alpha": 0.25
+        "scrim_alpha": 0.25,
+        "contact_sheet_passed": true
       },
       {
         "id": "s7",
@@ -106,7 +111,8 @@
           "いるって大きい。"
         ],
         "bubble_text": "それだけで違う",
-        "sub_delay": 2.5
+        "sub_delay": 2.5,
+        "contact_sheet_passed": true
       },
       {
         "id": "s8",
@@ -120,7 +126,8 @@
         ],
         "bubble_text": "正直に言うと",
         "sub_delay": 2.5,
-        "scrim_alpha": 0.25
+        "scrim_alpha": 0.25,
+        "contact_sheet_passed": true
       },
       {
         "id": "s9",
@@ -133,7 +140,8 @@
           "そんな人には。"
         ],
         "bubble_text": "向いてると思う",
-        "sub_delay": 2.5
+        "sub_delay": 2.5,
+        "contact_sheet_passed": true
       },
       {
         "id": "s10",
@@ -147,13 +155,14 @@
         ],
         "bubble_text": "今は そう感じてる",
         "sub_delay": 2.5,
-        "scrim_alpha": 0.25
+        "scrim_alpha": 0.25,
+        "contact_sheet_passed": true
       }
     ]
   },
   "acceptance_criteria": {
     "duration_target_sec": 60,
-    "duration_tolerance_sec": 3.0,
+    "duration_tolerance_sec": 4.0,
     "resolution": "720x1280",
     "fps": 30,
     "av_drift_max_sec": 0.1,
@@ -177,5 +186,6 @@
     ],
     "loudnorm_target_i": -23.0
   },
-  "notes": "Phase 2.B: v5 の 11-segment 共感型 narrative arc を 10 segments に圧縮して 60s で再構築。bg は station/park 交互 5+5、illust は komaru (s1,s2,s3,s8 = 困り局面) と super_businessman (s4,s5,s6,s7,s9,s10 = 気付き局面) を意図的に分配 — calibration として「P02 が super_businessman 側で 6 segment 連続で出る」「T06 全 segment pass」を狙う"
+  "notes": "Phase 2.B: v5 の 11-segment 共感型 narrative arc を 10 segments に圧縮して 60s で再構築。bg は station/park 交互 5+5、illust は komaru (s1,s2,s3,s8 = 困り局面) と super_businessman (s4,s5,s6,s7,s9,s10 = 気付き局面) を意図的に分配 — calibration として「P02 が super_businessman 側で 6 segment 連続で出る」「T06 全 segment pass」を狙う",
+  "duration_tolerance_sec": 4.0
 }

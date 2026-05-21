@@ -1,0 +1,9 @@
+[
+  {"patch_type":"replace_illust","segment":"s1","new_query":"スーツ 男性 困った 立ち止まる"},
+  {"patch_type":"replace_illust","segment":"s2","new_query":"スーツ 男性 悩む 一人"},
+  {"patch_type":"replace_illust","segment":"s4","new_query":"スーツ 男性 微笑む 一人"},
+  {"patch_type":"replace_bg","segment":"s6","new_query":"japan office desk afternoon"},
+  {"patch_type":"set_field","path":"acceptance_criteria.loudnorm_target_i","value":-23.0},
+  {"patch_type":"replace_illust","segment":"s9","new_query":"男性 歩く 横顔 落ち着き"},
+  {"patch_type":"replace_bg","segment":"s10","new_query":"japan park bench afternoon"}
+]

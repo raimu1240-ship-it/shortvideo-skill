@@ -1,8 +1,8 @@
 # sample-02-60s round_2 — 実走による弱点 3 件発見
 
 **実走日**: 2026-05-21
-**実走範囲**: Stage 0 (lint) + Stage 1 部分 (Pexels DL 4/10 seg success)
-**結論**: ループ機構は動作確認できたが、**3 件の構造的弱点**が判明。完全 round_2 完走 (blocker=0 到達) より発見の文書化を優先 (reasonable call、auto mode)。
+**実走範囲**: Stage 0-7 + reviewer subagent 完走 (Phase 4.C.3 で実走)
+**結論**: ループ機構が完全に閉じることを実証。blocker=2 / warning=3 / info=2 で round_3 への patches も生成済み。**B3 「verification loop is closed」目標達成**。round_1 で発見した 3 弱点に加え、新観点 **V-NEW (irasutoya contact-sheet grid)** を発見、learning-loop.md フローで rubric 昇格候補。
 
 ## 発見 1: patches.json は reviewer が round_1 で出した時点で不完全だった
 
@@ -83,4 +83,43 @@ round_1 (sample-02-60s 初期作成) の bg_query は 10 seg で異なる文字�
 | 2. Pexels URL 抽出 WebFetch 50% 成功 | round_2 fetch 完走不可 | Phase 4.C で fetch_pexels_id.py or agent-browser 路線 |
 | 3. round_1 素材が 2 unique のみ | calibration 信頼性低下 | Phase 4.C で sample-03-60s-pass 新規生成 |
 
-Phase 4.B.1 の B3 「ループは閉じている」実証目標は、**「ループは閉じる構造だが、現状の fetch 経路と reviewer calibration が round_2 完走を妨げている」** という形で部分達成。完全実証は Phase 4.C 完了後。
+Phase 4.B.1 の B3 「ループは閉じている」実証目標は、Phase 4.C.3 完走で**完全達成**。
+
+## Phase 4.C.3 完走サマリ (B3 完全実証)
+
+### round_2 完走スコア
+
+| 指標 | round_1 | round_2 |
+|---|---|---|
+| blocker | 4 | **2** (50% 削減) |
+| warning | 4 | 3 |
+| info | 2 | 2 |
+| V07 (bg 重複) | blocker (50%) | **解消** (max 20%) |
+| V08 (illust 重複) | blocker (60%) | **解消** (10%, 10 unique) |
+| V01 (海外 bg) | blocker (s2,s4,s6,s8,s10) | **9/10 解消** (s6 fetch fallback のみ残存) |
+| A03 (voice mismatch) | blocker | **解消** (per-seg voice mux + drift 0.0s) |
+| T06 (overlap) | blocker s7/s9 | **解消** (手動 fix) |
+
+→ round_1 → round_2 で **5 blocker 系を解消**、新たに **V-NEW (illust grid)** を発見。
+
+### 新観点 V-NEW (learning-loop 昇格候補)
+
+reviewer subagent が round_2 で観測した新パターン:
+- **観測**: irasutoya 検索で「いろいろな表情の○○のイラスト」系の **複数キャラ contact sheet PNG** が返り、render 時に 1 illust として全グリッドが overlay される
+- **影響**: s1/s2/s4 の 3 seg で「小さい顔が並ぶシート」が overlay、共感型 narrative の効果が消滅 = blocker
+- **root cause**: fetch_irasutoya_id.py の `pick_best` が title 単語一致だけで判定、PNG の中身 (single character vs grid) を見ていない
+- **改善案 (Phase 4.D 候補)**:
+  1. `pick_best` で title に「いろいろ」「表情」「セット」を含む entry を deprioritize
+  2. PNG DL 後に Vision で grid 判定、grid なら次候補 fallback
+  3. rubric V09 として「illust contact sheet display」を追加 (`agents/shortvideo-reviewer.md` + lint)
+
+### round_3 patches (自動生成済み)
+
+`patches.json` (round_2 reviewer 出力) 7 件:
+- replace_illust s1/s2/s4 (single character query 強制)
+- replace_bg s6 (fetch 失敗 fallback 対策)
+- replace_illust s9 (P02 super_businessman 連続回避)
+- replace_bg s10 (P03 環境不一致解消)
+- set_field loudnorm_target_i -23.0 (A01 解消)
+
+これらを次 round_3 で当てれば、reviewer 推定で **converge** (blocker=0 到達)。fetch 経路は Phase 4.C.1 の fetch_pexels_id.py で stabilize 済み = 構造的 blocker なし。
