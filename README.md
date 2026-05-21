@@ -16,7 +16,9 @@ Anthropic 公式の [Agent Skills](https://code.claude.com/docs/en/skills) 仕�
 | `.claude/skills/shortvideo-planner/` | ユーザーのお題から `input.json` (台本) を作成 |
 | `.claude/skills/shortvideo-generator/` | 7 段階パイプライン: lint → fetch → curate → narrate → caption → render → probe |
 | `.claude/skills/shortvideo-reviewer/` | 独立した reviewer (別 context で動かす) |
-| `.claude/agents/shortvideo-reviewer.md` | 27 観点 + 人間レビュー gate のチェックリスト |
+| `.claude/agents/shortvideo-planner.md` | 企画担当 subagent (緑色ラベル) |
+| `.claude/agents/shortvideo-generator.md` | 生成担当 subagent (青色ラベル) |
+| `.claude/agents/shortvideo-reviewer.md` | レビュー担当 subagent (紫色ラベル)、27 観点 + 人間レビュー gate |
 | `.claude/commands/shortvideo-loop.md` | 最大 3 ラウンドの自動修正ループ |
 | `scripts/` | Python ユーティリティ 8 種 (lint / fetch / render / probe / captions / tts / 他) |
 | `evaluations/` | 動作評価シナリオ 3 種 (再現性 / 海外背景除外 / PR 色除外) |
@@ -101,6 +103,18 @@ planner → generator → reviewer の順に自動実行。最大 3 ラウンド
 完成した動画は `projects/プロジェクト名/output.mp4`。
 
 個別にステップを動かしたい場合は `/shortvideo-planner` → `/shortvideo-generator` → reviewer skill を順に呼んでください。
+
+### 3 エージェントの色分け
+
+`/shortvideo-loop` は 3 つの subagent を順番に動かします。Claude Code の TaskList / transcript 上で**色分け表示**されるので、今どの段階を実行中か視覚的に分かります:
+
+| エージェント | 色 | 役割 |
+|---|---|---|
+| `shortvideo-planner` | 🟢 緑 | お題から input.json (台本) を作る |
+| `shortvideo-generator` | 🔵 青 | input.json から output.mp4 を生成 |
+| `shortvideo-reviewer` | 🟣 紫 | 27 観点で grade、patch を出力 |
+
+planner → generator → reviewer のチーム制で 1 本の動画ができる流れです。
 
 ### 別ディレクトリから claude を起動した場合
 

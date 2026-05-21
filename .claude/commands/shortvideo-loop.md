@@ -28,21 +28,28 @@ shortvideo-loop progress (project=<name>)
 - [ ] Final: report status
 ```
 
-### Round 0 — Plan
+### Round 0 — Plan (緑色 subagent: shortvideo-planner)
 
-If `projects/<name>/input.json` does not exist:
-- Invoke `/shortvideo-planner <name>` (the planner skill)
-- Confirm with the user that the draft is acceptable BEFORE proceeding
+`projects/<name>/input.json` が無ければ:
+- **Agent tool** で `subagent_type="shortvideo-planner"` を起動
+  (transcript 上で緑色のラベルで表示される)
+- 完成した input.json をユーザーに見せて確認 → OK が出てから次へ
 
-If it exists, skip this round and tell the user "Using existing input.json. Use /shortvideo-planner manually if you want to revise."
+既に input.json があれば、このラウンドはスキップして
+「既存の input.json を使います。修正したい場合は /shortvideo-planner を手動で呼んでください」と伝える。
 
 ### Round N — Generate + Review (N = 1, 2, 3)
 
-1. Run `/shortvideo-generator <name>` (the generator skill, all Stages 0-7)
-2. Spawn the reviewer subagent via the **Agent tool**.
+1. **Agent tool** で `subagent_type="shortvideo-generator"` を起動
+   (transcript 上で青色のラベルで表示される) → 7 段階パイプライン実行
+2. **Agent tool** で `subagent_type="shortvideo-reviewer"` を起動
+   (transcript 上で紫色のラベルで表示される)
    - Skill ツールは使わない — `shortvideo-reviewer` skill は
      `disable-model-invocation: true` で programmatic な呼び出しを意図的に
      拒否している (生成者と評価者を別 context で物理的に分離するため)
+   - 同様に generator も Agent tool 経由で起動する。planner / generator /
+     reviewer の 3 つを subagent として呼ぶことで、TaskList / transcript で
+     緑 / 青 / 紫の色分けでどのエージェントが動いているか視覚的に分かる
    - **推奨**: `subagent_type="shortvideo-reviewer"`。これは
      `.claude/agents/shortvideo-reviewer.md` がランタイムから見える状態が必要、
      具体的には **`claude` がこのリポジトリのディレクトリで起動されていること**
