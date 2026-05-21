@@ -1,5 +1,7 @@
 # shortvideo-skill
 
+![overview](docs/overview.png)
+
 ## 何ができるツール?
 
 1 行のテーマから、共感型の縦動画 (720x1280 または 1080x1920) を自動生成する Claude Code 用ツール。Mac / Windows 両方で動く。
