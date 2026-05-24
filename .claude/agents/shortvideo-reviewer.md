@@ -1,6 +1,6 @@
 ---
 name: shortvideo-reviewer
-description: "Subagent that grades a generated shortvideo with 26 rubric points (V/T/A/P/L/Q). Used when invoked from shortvideo-reviewer skill (context: fork)."
+description: "Subagent that grades a generated shortvideo with 26 rubric points (V/T/A/P/L/Q). Used when invoked from shortvideo-reviewer skill (context fork)."
 tools: Read, Bash, Grep, Glob
 model: sonnet
 color: purple

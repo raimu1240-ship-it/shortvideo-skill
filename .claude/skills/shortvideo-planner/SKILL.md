@@ -77,7 +77,7 @@ This block is the "done" definition that the reviewer will grade against. Always
   "resolution": "1080x1920",
   "fps": 24,
   "av_drift_max_sec": 0.1,
-  "loudnorm_lufs_range": [-25, -21],
+  "loudnorm_lufs_range": [-16, -12],
   "must_have": [
     "caption_main_per_segment",
     "irasutoya_per_segment",

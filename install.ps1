@@ -1,4 +1,4 @@
-# shortvideo-skill Windows インストーラ
+﻿# shortvideo-skill Windows インストーラ
 #
 # 要件: symlink 作成のため以下のいずれかが必要
 #   方法 A (推奨): Windows の「開発者モード」を ON にする

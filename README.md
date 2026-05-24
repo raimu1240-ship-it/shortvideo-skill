@@ -64,6 +64,12 @@ claude
 
 cmd.exe を使う場合は `install.bat` をダブルクリック (中で PowerShell の install.ps1 が走る)。
 
+> **PS 5.1 (Windows 標準) で文字化けエラーが出る場合**: `install.ps1` は UTF-8 BOM 付きで配布していますが、環境によっては Shift-JIS に誤認識されることがあります。以下のワンライナーで修正してください:
+> ```powershell
+> $c = Get-Content -Raw -Encoding UTF8 .\install.ps1; [IO.File]::WriteAllText((Resolve-Path .\install.ps1), $c, (New-Object Text.UTF8Encoding $true))
+> ```
+> PowerShell 7+ では発生しません。
+
 `install.ps1` は symlink 作成を試み、失敗した場合は自動でファイルコピーに切り替えます (コピー運用時は `git pull` 後に再度 `install.ps1` を実行)。
 
 ## 必要環境

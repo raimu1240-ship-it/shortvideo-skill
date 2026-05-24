@@ -26,7 +26,7 @@ def loudnorm_analyze(path: Path) -> dict:
     """ffmpeg loudnorm pass1 (analyze only) で LUFS 測定。"""
     r = subprocess.run(
         ["ffmpeg", "-i", str(path), "-af",
-         "loudnorm=I=-23:TP=-1.5:LRA=11:print_format=json",
+         "loudnorm=I=-14:TP=-1.0:LRA=11:print_format=json",
          "-f", "null", "-"],
         capture_output=True, text=True,
     )
